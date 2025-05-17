@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { TErrorSources } from '../interface/error';
@@ -13,11 +13,11 @@ import AppError from '../errors/AppError';
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   const isDevelopment = config.NODE_ENV === 'development';
   const errorResponse = (statusCode: number, message: string, errorSources: TErrorSources) => 
-    res.status(statusCode).json({
+     res.status(statusCode).json({
       success: false,
       errorMessage: message,
       errorSource: errorSources,
-      stack: isDevelopment ? err?.stack : undefined,
+      stack: isDevelopment ? err?.stack : null,
     });
 
   if (err instanceof ZodError) {

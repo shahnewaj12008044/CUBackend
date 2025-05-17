@@ -1,5 +1,5 @@
 import express, { Application, Request, Response } from 'express'
-import goblalErrorHandler from './app/middleware/globalErrorHandler'
+import globalErrorHandler from './app/middleware/globalErrorHandler'
 const app: Application = express()
 import cors from 'cors'
 //parser
@@ -12,7 +12,7 @@ app.get('/', (req:Request, res:Response) => {
 
 
 //gloabal error handler
-app.use(goblalErrorHandler)
+app.use(globalErrorHandler)
 
 
 export default app;
