@@ -26,9 +26,7 @@ const userSchema = new Schema<IUser>(
       enum: [
         'student',
         'teacher',
-        'superadmin',
-        'departmentadmin',
-        'facultyadmin',
+        'alumni'
       ],
       default: 'student',
     },
