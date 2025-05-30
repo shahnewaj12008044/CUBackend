@@ -17,45 +17,46 @@ export interface ICorporateInfo {
   company: string;
   designation: string;
   description?: string;
-  startDate: Date;
-  endDate?: Date;
+  startDate: string;
+  endDate: string;
   currentlyWorking?: boolean;
 }
 
 export interface IResearchInfo {
   institution: string; //^ name of the lab or research institution
   researchArea: string[];
-  degree: 'MS' | 'PhD' | 'Postdoc' | 'Research Associate' | 'Other';
+  designation: 'MS' | 'PhD' | 'Postdoc' | 'Research Associate' | 'Other';
   supervisor?: string;
-  startDate: Date;
-  endDate?: Date;
+  startDate: string;
+  endDate: string;
   currentlyWorking?: boolean;
   description?: string;
 }
 
 export interface IAcademiaInfo {
   university: string;
-  position: string; // e.g., Assistant Professor
+  designation: string; // e.g., Assistant Professor
   department: string;
-  startDate: Date;
-  endDate?: Date;
+  startDate: string;
+  endDate: string;
   currentlyWorking?: boolean;
   description?: string;
 }
 
 export interface IAdministrationInfo {
   organization: string;
-  position: string;
-  startDate: Date;
-  endDate?: Date;
+  designation: string;
+  startDate: string;
+  endDate: string;
   currentlyWorking?: boolean;
   description?: string;
 }
 
 export interface IBusinessInfo {
   businessName: string;
-  startDate: Date;
-  endDate?: Date;
+  designation: string;
+  startDate: string;
+  endDate: string;
   currentlyWorking?: boolean;
   description?: string;
   location?: string;
@@ -64,9 +65,10 @@ export interface IBusinessInfo {
 
 export interface IOtherInfo {
   title: string;
+  designation?: string;
   description: string;
-  startDate: Date;
-  endDate?: Date;
+  startDate: string;
+  endDate: string;
   currentlyWorking?: boolean;
   location?: string;
 }
@@ -91,7 +93,7 @@ export interface IAlumniProfile {
   administrationInfo?: IAdministrationInfo[];
   businessInfo?: IBusinessInfo[];
   otherInfo?: IOtherInfo[];
-  currentlocation?: IALumniLocation;
+
  
 }
 
@@ -108,6 +110,7 @@ export interface IAlumni {
   name: string;
   gender: 'male' | 'female' | 'other';
   email: string;
+  graduationYear: number;
   contactNumber: string;
   socialMedia?:IAlumniSocialMedia[];
   willingTomentor: boolean;

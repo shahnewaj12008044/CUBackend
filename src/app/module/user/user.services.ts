@@ -6,6 +6,8 @@ import { User } from './user.model';
 import AppError from '../../errors/AppError';
 import httpstatus from 'http-status-codes';
 import Student from '../student/student.model';
+import { IAlumni } from '../alumni/alumni.interface';
+import { Alumni } from '../alumni/alumni.model';
 
 const signupStudentIntoDB = async (password: string, payload: IStudent) => {
   const user: Partial<IUser> = {};
@@ -28,6 +30,7 @@ const signupStudentIntoDB = async (password: string, payload: IStudent) => {
   try {
     session.startTransaction();
     const newUser = await User.create([user], { session });
+   // console.log(newUser)
     if (!newUser || newUser.length === 0) {
       throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
     }
@@ -55,6 +58,49 @@ const signupStudentIntoDB = async (password: string, payload: IStudent) => {
   }
 };
 
+const signupAlumniIntoDB = async (password: string, payload: IAlumni) => {
+  const user: Partial<IUser> = {};
+  //   console.log('payload', payload);
+  //^ ===================== creating user object=========================
+  user.id = payload.studentId;
+  user.email = payload.email;
+  user.password = password;
+  user.role = 'student';
+  //   console.log('user', user);
+  //!============= checking the validity of user=================================
+  
+  const isUserExist = await User.isUserExist(user.email);
+  if (isUserExist) {
+    throw new AppError(httpstatus.BAD_REQUEST, 'User already exist');
+  }
+
+  const session = await mongoose.startSession();
+  try{
+    session.startTransaction();
+    const newUser = await User.create([user], { session });
+    if( !newUser || newUser.length === 0) {
+      throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
+    }
+    payload.userId = newUser[0]._id;
+    const newAlumni = await Alumni.create([payload], { session });
+    if( !newAlumni || newAlumni.length === 0) {
+      throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
+    }
+    await session.commitTransaction();
+    await session.endSession();
+    return newAlumni[0];
+  }catch(error: any) {
+    await session.abortTransaction();
+    await session.endSession();
+    throw new AppError(
+      httpstatus.INTERNAL_SERVER_ERROR,
+      'An error occurred while signing up the alumni into the database',
+      error,
+    );
+  }
+}
+
 export const userServices = {
   signupStudentIntoDB,
+  signupAlumniIntoDB
 };

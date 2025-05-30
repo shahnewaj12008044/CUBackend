@@ -1,100 +1,7 @@
-// import { Schema } from "mongoose";
-
-
-
-
-
-
-
-
-
-
-// export enum AlumniCategory {
-//   CORPORATE = 'corporate',
-//   RESEARCH = 'research',
-//   ACADEMIA = 'academia',
-//   ADMINISTRATION = 'administration',
-//   BUSSINESS = 'business',
-//   OTHER = 'other',
-// }
-
-// const AlumniLocationSchema = new Schema({
-//   country: String,
-//   city: String,
-// }, { _id: false });
-
-// const CorporateInfoSchema = new Schema({
-//   company: String,
-//   designation: String,
-//   description: String,
-//   startDate: Date,
-//   endDate: Date,
-//   currentlyWorking: Boolean,
-// }, { _id: false });
-
-// const ResearchInfoSchema = new Schema({
-//   institution: String,
-//   researchArea: String,
-//   degree: { type: String, enum: ['MS', 'PhD'] },
-//   supervisor: String,
-//   startDate: Date,
-//   endDate: Date,
-//   currentlyWorking: Boolean,
-//   description: String,
-// }, { _id: false });
-
-// const AcademiaInfoSchema = new Schema({
-//   university: String,
-//   title: String,
-//   department: String,
-//   startDate: Date,
-//   endDate: Date,
-//   currentlyWorking: Boolean,
-//   description: String,
-// }, { _id: false });
-
-// const AdministrationInfoSchema = new Schema({
-//   organization: String,
-//   position: String,
-//   startDate: Date,
-//   endDate: Date,
-//   currentlyWorking: Boolean,
-//   description: String,
-// }, { _id: false });
-
-// const BusinessInfoSchema = new Schema({
-//   businessName: String,
-//   startDate: Date,
-//   endDate: Date,
-//   currentlyWorking: Boolean,
-//   description: String,
-//   location: String,
-//   website: String,
-// }, { _id: false });
-
-// const OtherInfoSchema = new Schema({
-//   title: String,
-//   description: String,
-//   startDate: Date,
-//   endDate: Date,
-//   currentlyWorking: Boolean,
-//   location: String,
-// }, { _id: false });
-
-// const AlumniProfileSchema = new Schema({
-//   alumniCategory: { type: String, enum: Object.values(AlumniCategory),  required: [true, 'alumniCategory is required'] },
-//   corporateInfo: [CorporateInfoSchema],
-//   researchInfo: [ResearchInfoSchema],
-//   academiaInfo: [AcademiaInfoSchema],
-//   administrationInfo: [AdministrationInfoSchema],
-//   businessInfo: [BusinessInfoSchema],
-//   otherInfo: [OtherInfoSchema],
-//   currentlocation: AlumniLocationSchema,
-//   willingToMentor: Boolean,
-// }, { _id: false });
 
 
 import mongoose, { Schema } from 'mongoose';
+import { IAlumni } from './alumni.interface';
 
 export enum AlumniCategory {
   CORPORATE = 'corporate',
@@ -111,8 +18,8 @@ const CorporateInfoSchema = new Schema(
     company: String,
     designation: String,
     description: String,
-    startDate: Date,
-    endDate: Date,
+    startDate: String,
+    endDate: String,
     currentlyWorking: Boolean,
   },
   { _id: false }
@@ -122,10 +29,10 @@ const ResearchInfoSchema = new Schema(
   {
     institution: String,
     researchArea: [String],
-    degree: { type: String, enum: ['MS', 'PhD'] },
+    designation: { type: String, enum: ['MS', 'PhD', 'Postdoc', 'Research Associate', 'Other'] },
     supervisor: String,
-    startDate: Date,
-    endDate: Date,
+    startDate: String,
+    endDate: String,
     currentlyWorking: Boolean,
     description: String,
   },
@@ -135,10 +42,10 @@ const ResearchInfoSchema = new Schema(
 const AcademiaInfoSchema = new Schema(
   {
     university: String,
-    position: String,
+    designation: String,
     department: String,
-    startDate: Date,
-    endDate: Date,
+    startDate: String,
+    endDate: String,
     currentlyWorking: Boolean,
     description: String,
   },
@@ -148,9 +55,9 @@ const AcademiaInfoSchema = new Schema(
 const AdministrationInfoSchema = new Schema(
   {
     organization: String,
-    position: String,
-    startDate: Date,
-    endDate: Date,
+    designation: String,
+    startDate: String,
+    endDate: String,
     currentlyWorking: Boolean,
     description: String,
   },
@@ -160,8 +67,9 @@ const AdministrationInfoSchema = new Schema(
 const BusinessInfoSchema = new Schema(
   {
     businessName: String,
-    startDate: Date,
-    endDate: Date,
+    designation: String,
+    startDate: String,
+    endDate: String,
     currentlyWorking: Boolean,
     description: String,
     location: String,
@@ -173,9 +81,10 @@ const BusinessInfoSchema = new Schema(
 const OtherInfoSchema = new Schema(
   {
     title: String,
+    designation: String,//^ position or degree also replaced with designation to manage frontend easily
     description: String,
-    startDate: Date,
-    endDate: Date,
+    startDate: String,
+    endDate: String,
     currentlyWorking: Boolean,
     location: String,
   },
@@ -221,7 +130,7 @@ const AlumniProfileSchema = new Schema(
     administrationInfo: [AdministrationInfoSchema],
     businessInfo: [BusinessInfoSchema],
     otherInfo: [OtherInfoSchema],
-    currentlocation: LocationSchema,
+
   },
   { _id: false }
 );
@@ -234,6 +143,7 @@ const AlumniSchema = new Schema(
     name: { type: String, required: true },
     gender: { type: String, enum: ['male', 'female', 'other'], required: true },
     email: { type: String, required: true },
+    graduationYear: { type: Number, required: true },
     contactNumber: { type: String, required: true },
     socialMedia: [SocialMediaSchema],
     willingTomentor: { type: Boolean, required: true },
@@ -244,10 +154,10 @@ const AlumniSchema = new Schema(
     alumniProfile: { type: AlumniProfileSchema, required: true },
     department: { type: String, required: true },
     faculty: { type: String, required: true },
-    status: { type: String, enum: ['in-progress', 'blocked'], required: true },
+    status: { type: String, enum: ['in-progress', 'blocked'],default: 'in-progress', required: true },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-export default mongoose.model('Alumni', AlumniSchema);
+export const Alumni = mongoose.model<IAlumni>('Alumni', AlumniSchema);

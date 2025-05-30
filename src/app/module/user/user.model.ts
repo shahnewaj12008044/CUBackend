@@ -1,5 +1,7 @@
 import { model, Schema } from 'mongoose';
 import { IUser, IUserModel } from './user.interface';
+import config from '../../config';
+import bcrypt from "bcrypt";
 
 const userSchema = new Schema<IUser , IUserModel>(
   {
@@ -45,8 +47,25 @@ const userSchema = new Schema<IUser , IUserModel>(
   },
 );
 
+userSchema.pre("save", async function (next) {
+  //hashing password and save into DB:
+   //crurrent processed document
+  this.password = await bcrypt.hash(
+    this.password,
+    Number(config.bcrypt_salt_rounds)
+  );
+  next();
+});
+
+
+//post save middleware/hooks:
+userSchema.post("save", function (doc, next) {
+  doc.password = "";
+  next();
+});
+
 userSchema.statics.isUserExist = async function (email: string): Promise<IUser | null> {
-  return await this.findOne({ email });
+  return await this.findOne({ email }).lean();
 }
 
 export const User = model<IUser , IUserModel>("User", userSchema)

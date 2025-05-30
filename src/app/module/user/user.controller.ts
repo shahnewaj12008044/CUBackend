@@ -15,7 +15,21 @@ const signupStudent = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const signupAlumni = catchAsync(async (req, res) => {
+  const { password, alumni} = req.body;
+//   console.log(req.body)
+// console.log(password, student)
+  const result = await userServices.signupAlumniIntoDB(password, alumni);
+  sendResponse(res, {
+    statusCode: httpstatus.OK,
+    success: true,
+    message: 'Alumni created successfully',
+    data: result,
+  });
+});
 
 export const userController = {
   signupStudent,
+  signupAlumni,
+
 };
