@@ -1,3 +1,4 @@
+import { Model } from "mongoose";
 
 export interface IUser {
     id: string;
@@ -10,3 +11,8 @@ export interface IUser {
 }
 
 //! role : "superadmin" | "departmentadmin" | "facultyadmin"; i would rather use them as post of the club 
+
+
+export interface IUserModel extends Model<IUser>{
+    isUserExist(email: string): Promise<IUser | null>;
+}

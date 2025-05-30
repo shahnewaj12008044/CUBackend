@@ -9,13 +9,21 @@ import Student from '../student/student.model';
 
 const signupStudentIntoDB = async (password: string, payload: IStudent) => {
   const user: Partial<IUser> = {};
-//   console.log('payload', payload);
+  //   console.log('payload', payload);
+  //^ ===================== creating user object=========================
   user.id = payload.studentId;
   user.email = payload.email;
   user.password = password;
   user.role = 'student';
-//   console.log('user', user);
+  //   console.log('user', user);
+  //!============= checking the validity of user=================================
+  
+  const isUserExist = await User.isUserExist(user.email);
+  if (isUserExist) {
+    throw new AppError(httpstatus.BAD_REQUEST, 'User already exist');
+  }
 
+  //^ ============= creating transection and rollback to signup for student and user=================
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
@@ -24,7 +32,7 @@ const signupStudentIntoDB = async (password: string, payload: IStudent) => {
       throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
     }
     // console.log('newUser', newUser);
-    
+
     payload.userId = newUser[0]._id;
     // console.log('payload', payload.userId);
     const newStudent = await Student.create([payload], { session });
@@ -38,6 +46,7 @@ const signupStudentIntoDB = async (password: string, payload: IStudent) => {
   } catch (error: any) {
     await session.abortTransaction();
     await session.endSession();
+    // console.log(error)
     throw new AppError(
       httpstatus.INTERNAL_SERVER_ERROR,
       'An error occurred while signing up the student into the database',
