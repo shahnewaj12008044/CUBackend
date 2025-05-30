@@ -99,7 +99,7 @@ const LocationSchema = new Schema(
   { _id: false }
 );
 
-const SocialMediaSchema = new Schema(
+const OnlinePresenceSchema = new Schema(
   {
     platform: String,
     link: String,
@@ -145,7 +145,7 @@ const AlumniSchema = new Schema(
     email: { type: String, required: true },
     graduationYear: { type: Number, required: true },
     contactNumber: { type: String, required: true },
-    socialMedia: [SocialMediaSchema],
+    onlinePresence: [OnlinePresenceSchema],//^ changed the name from socialmedia to onlinePresence to make it more generic so that alumni can add any online platform they are active on
     willingTomentor: { type: Boolean, required: true },
     location: { type: LocationSchema, required: true },
     session: { type: String, required: true },

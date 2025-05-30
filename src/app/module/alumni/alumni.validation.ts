@@ -12,7 +12,7 @@ const LocationSchema = z.object({
   city: z.string(),
 });
 
-const SocialMediaSchema = z.object({
+const OnlinePresenceSchema = z.object({
   platform: z.string(),
   link: z.string().url(),
 });
@@ -103,7 +103,7 @@ const alumniSchema = z.object({
   email: z.string().email(),
   graduationYear: z.number().int(),
   contactNumber: z.string(),
-  socialMedia: z.array(SocialMediaSchema).optional(),
+  onlinePresence: z.array(OnlinePresenceSchema).optional(),
   willingTomentor: z.boolean(),
   location: LocationSchema,
   session: z.string(),
@@ -124,11 +124,11 @@ const alumniSignupValidationSchema = z.object({
 
 
 
-// For updates (all fields optional)
-// const UpdateAlumniSchema = AlumniSchema.partial();
+//! here update validation has a lot to da in it. I didn't think about it.
+const UpdateAlumniSchema = alumniSchema.partial();
 
 // Export all schemas
 export const alumniValidation = {
   alumniSignupValidationSchema,
-  // UpdateAlumniSchema,
+  UpdateAlumniSchema,
 };

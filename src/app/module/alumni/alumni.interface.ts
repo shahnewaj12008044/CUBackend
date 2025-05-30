@@ -78,7 +78,7 @@ interface IALumniLocation {
   city: string;
 }
 
-interface IAlumniSocialMedia {
+interface IAlumniOnlinePresence {
   platform: string;
   link: string;
 }
@@ -112,7 +112,7 @@ export interface IAlumni {
   email: string;
   graduationYear: number;
   contactNumber: string;
-  socialMedia?:IAlumniSocialMedia[];
+  onlinePresence?:IAlumniOnlinePresence[];
   willingTomentor: boolean;
   location:IALumniLocation;
   session: string;

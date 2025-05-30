@@ -65,7 +65,7 @@ const signupAlumniIntoDB = async (password: string, payload: IAlumni) => {
   user.id = payload.studentId;
   user.email = payload.email;
   user.password = password;
-  user.role = 'student';
+  user.role = 'alumni';
   //   console.log('user', user);
   //!============= checking the validity of user=================================
   
