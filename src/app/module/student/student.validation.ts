@@ -15,7 +15,7 @@ const achievementSchema = z.object({
 });
 
 const studyInfoSchema = z.object({
-  CurrentProgram: z.enum(['Bachelor', 'Masters', 'PhD', 'Alumni']),
+  CurrentProgram: z.enum(['Bachelor', 'Masters', 'PhD']),
   year: z.number().min(1),
   semester: z.number().min(1).optional(),
 });
@@ -48,6 +48,9 @@ export const studentSignupValidationSchema = z.object({
   }),
 });
 
+const UpdateStudentSchema = studentSchema.partial();
+
 export const studentalidations = {
   studentSignupValidationSchema,
+  UpdateStudentSchema,
 };

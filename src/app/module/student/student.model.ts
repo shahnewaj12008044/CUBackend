@@ -1,5 +1,6 @@
 import { Schema, model} from 'mongoose';
 import { IStudent } from './student.interface';
+import { applySoftDeleteFilter } from '../../utils/applySoftDeleteFilter';
 
 // Enums
 
@@ -50,6 +51,14 @@ const StudentSchema = new Schema({
 }, {
   timestamps: true,
 });
+
+
+const queryMiddleware = ['find', 'findOne', 'findOneAndUpdate', 'count', 'countDocuments'];
+for (const method of queryMiddleware) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  StudentSchema.pre(method as any, applySoftDeleteFilter);
+}
+
 
 const Student = model<IStudent>( 'Student', StudentSchema);
 

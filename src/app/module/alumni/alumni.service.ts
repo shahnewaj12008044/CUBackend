@@ -17,10 +17,29 @@ const getSingleAlumniFromDB = async (id: string) => {
 };
 
 const updateAlumniFromDB = async (id: string, payload: Partial<IAlumni>) => {
+  //^ 🚫 Block forbidden field updates
+  const forbiddenFields: string[] = [
+      'status',
+      'role',
+      'email',
+    ];
+  
+    for( const field of forbiddenFields) {
+      if (field in payload) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          `Updating ${field} is not allowed`,
+        );
+      }
+    }
+     //! so basicly i was trying to update the user and student data in one transactionbut i realised in doing so i have to write it more than one time ( student, alumni and so on ) so i will just write it once in user to update the role email status etc
+  //^ SUMMARY: you can update anything but email, role, status and id. for updating that you have to go to user route and here you will find those options to update
+
   const result = await Alumni.findOneAndUpdate({ studentId: id }, payload, {
     new: true,
     runValidators: true,
   }).exec();
+ 
   //! here i didn't handled the non-primitive data types like array or array of objects my plan is to handle them form frontend although this is a bad practice but for now i will do it like this
   if (!result) {
     throw new AppError(
@@ -32,6 +51,7 @@ const updateAlumniFromDB = async (id: string, payload: Partial<IAlumni>) => {
 };
 
 
+//^ shouldn't i do that also in user service. In this method  i have to write the same funcion in different models whereas in user service i can just do it by doing it once and then use it in all models.
 const deleteAlumniFromDB = async(id : string) =>{
     const session = await mongoose.startSession();
     try{

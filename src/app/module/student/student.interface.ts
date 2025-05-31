@@ -11,7 +11,7 @@ interface IStudentAchievements {
 }
 
 interface IStudentStudyInfo {
-  CurrentProgram: "Bechelor" | "Masters" | "PhD" | "Alumni";
+  CurrentProgram: "Bechelor" | "Masters" | "PhD" ;
   year: number;
   semester?: number;
 }

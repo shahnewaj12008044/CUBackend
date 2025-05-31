@@ -2,6 +2,8 @@
 
 import mongoose, { Schema } from 'mongoose';
 import { IAlumni } from './alumni.interface';
+import { applySoftDeleteFilter } from '../../utils/applySoftDeleteFilter';
+
 
 export enum AlumniCategory {
   CORPORATE = 'corporate',
@@ -159,5 +161,25 @@ const AlumniSchema = new Schema(
   },
   { timestamps: true }
 );
+
+
+// AlumniSchema.pre('find',function () {
+//   this.find({ isDeleted: { $ne: true }});
+// });
+// AlumniSchema.pre('findOne',function () {
+//   this.find({ isDeleted: { $ne: true }});
+// });
+
+// AlumniSchema.pre('findOneAndUpdate',function () {
+//   this.find({ isDeleted: { $ne: true }});
+// });
+
+//~ filtering the deleted data from the query
+const queryMiddleware = ['find', 'findOne', 'findOneAndUpdate', 'count', 'countDocuments'];
+for (const method of queryMiddleware) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  AlumniSchema.pre(method as any, applySoftDeleteFilter);
+}
+
 
 export const Alumni = mongoose.model<IAlumni>('Alumni', AlumniSchema);

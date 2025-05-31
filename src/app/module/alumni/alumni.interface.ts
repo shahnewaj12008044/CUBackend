@@ -124,3 +124,4 @@ export interface IAlumni {
   status: 'in-progress' | 'blocked';
   isDeleted: boolean;
 }
+
