@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 import AppError from '../../errors/AppError';
 import { User } from '../user/user.model';
 import { IAlumni } from './alumni.interface';
-import { Alumni } from './alumni.model';
+import Alumni from './alumni.model';
 import httpStatus from 'http-status-codes';
+import validatePayloadKeys from '../../utils/validatePayloadKeys';
 
 const getAllAlumniFromDB = async () => {
   const result = await Alumni.find({});
@@ -52,17 +53,25 @@ const updateAlumniFromDB = async (id: string, payload: Partial<IAlumni>) => {
 
 
 //^ shouldn't i do that also in user service. In this method  i have to write the same funcion in different models whereas in user service i can just do it by doing it once and then use it in all models.
-const deleteAlumniFromDB = async(id : string) =>{
+//~ remarks on the above line: i tried it also but from user part its not that simple as expected cause here also every model like student, alumni rquires to update which makes the code little bit odd  although i did it using if else if statement.
+
+
+//! update linked data like isDeleted, status, email etc.
+const updateAlumniLinkedDataFromDB = async(id : string,payload: Partial<IAlumni>) =>{
     const session = await mongoose.startSession();
     try{
         session.startTransaction();
-        const user = await User.findOneAndUpdate({id}, {isDeleted : true}, {new : true,session});
+         //^ 🚫 Block forbidden field updates like role is not in the student model but if i put role it didnt give any error instead it modified the user so i added the validation where if the keys are not common in both model it will give error 
+    //* nice validation works both for user and student model
+        validatePayloadKeys(payload, User, 'user');
+        validatePayloadKeys(payload, Alumni, 'alumni');
+        const user = await User.findOneAndUpdate({id}, payload, {new : true,session});
         if(!user){
-            throw new AppError(httpStatus.BAD_REQUEST,"Failed to delete user")
+            throw new AppError(httpStatus.BAD_REQUEST,"Failed to update  user")
         }
-        const alumni = await Alumni.findOneAndUpdate({studentId : id}, {isDeleted : true}, {new : true, session});
+        const alumni = await Alumni.findOneAndUpdate({studentId : id}, payload, {new : true, session});
         if(!alumni){
-            throw new AppError(httpStatus.BAD_REQUEST,"Failed to delete alumni")
+            throw new AppError(httpStatus.BAD_REQUEST,"Failed to update alumni")
         }
         await session.commitTransaction();
         session.endSession();
@@ -72,7 +81,7 @@ const deleteAlumniFromDB = async(id : string) =>{
  catch(error: any){
     session.abortTransaction();
     session.endSession();
-    throw new AppError(httpStatus.BAD_REQUEST,"Failed to delete user",error)
+    throw new AppError(httpStatus.BAD_REQUEST,`Failed to update alumni for ${error?.message} `,error)
  }
 }
 
@@ -80,5 +89,6 @@ export const AlumniServices = {
   getAllAlumniFromDB,
   getSingleAlumniFromDB,
   updateAlumniFromDB,
-  deleteAlumniFromDB,
+  updateAlumniLinkedDataFromDB,
 };
+ 

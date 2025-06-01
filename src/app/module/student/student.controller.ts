@@ -36,13 +36,14 @@ const updateStudent = catchAsync(async (req, res) => {
   });
 });
 
-const deleteStudent = catchAsync(async (req, res) => {
+const updateLinkedData = catchAsync(async (req, res) => {
   const { studentId } = req.params;
-  const result = await StudentServices.deleteStudentFromDB(studentId);
+  
+  const result = await StudentServices.updateLinkedDataFromDB(studentId,req.body);
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'Student deleted successfully',
+    message: 'Student is updated in all linked models successfully',
     data: result,
   });
 });
@@ -51,5 +52,5 @@ export const StudentController = {
   getAllStudents,
   getSingleStudent,
   updateStudent,
-  deleteStudent,
+ updateLinkedData,
 };

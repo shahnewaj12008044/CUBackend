@@ -47,10 +47,16 @@ export const studentSignupValidationSchema = z.object({
     student: studentSchema,
   }),
 });
+const updateLinkedDataSchema = z.object({
+  email: z.string().email('Invalid email').optional(),
+  isDeleted: z.boolean().optional(),
+  status: z.enum(['in-progress', 'blocked']).optional(),
+});
 
 const UpdateStudentSchema = studentSchema.partial();
 
 export const studentalidations = {
   studentSignupValidationSchema,
   UpdateStudentSchema,
+  updateLinkedDataSchema,
 };

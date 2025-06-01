@@ -9,7 +9,7 @@ const router = Router();
 router.get("/",AlumniController.getAllAlumni);
 router.get("/:studentId",AlumniController.getSingleAlumni);
 router.put("/:studentId",validationRequest(alumniValidation.UpdateAlumniSchema),AlumniController.updateAlumni);
-router.delete("/:studentId",AlumniController.deleteAlumni);
+router.patch("/updateLinkedData/:studentId",AlumniController.updateAlumniLinkedData);
 
 
 export const alumniRoutes = router;
