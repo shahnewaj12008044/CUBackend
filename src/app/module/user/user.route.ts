@@ -9,6 +9,7 @@ const router = Router();
 
 router.post ("/signup-student",validationRequest(studentalidations.studentSignupValidationSchema), userController.signupStudent);
 router.post ("/signup-alumni",validationRequest(alumniValidation.alumniSignupValidationSchema), userController.signupAlumni);
+router.put("/:studentId", userController.updateUserData);
 
 
 export const userRoutes = router;

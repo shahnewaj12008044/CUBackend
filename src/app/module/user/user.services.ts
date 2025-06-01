@@ -7,7 +7,9 @@ import AppError from '../../errors/AppError';
 import httpstatus from 'http-status-codes';
 import Student from '../student/student.model';
 import { IAlumni } from '../alumni/alumni.interface';
-import { Alumni } from '../alumni/alumni.model';
+
+
+import Alumni from '../alumni/alumni.model';
 
 const signupStudentIntoDB = async (password: string, payload: IStudent) => {
   const user: Partial<IUser> = {};
@@ -100,7 +102,64 @@ const signupAlumniIntoDB = async (password: string, payload: IAlumni) => {
   }
 }
 
+
+//^ this is actually for updating user data linked to another model like status, role and also isdeleted
+const updateUserDataIntoDB = async (id:string, payload: Partial<IUser>) => {
+  const forbiddenFields:string[] = ['id', 'password','role', 'passwordChangedAt', 'createdAt', 'updatedAt'];
+  for (const field of forbiddenFields){
+    if (field in payload){
+      throw new AppError(httpstatus.BAD_REQUEST, `You cannot update ${field} field`);
+    }
+  }
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+    const updatedUser = await User.findOneAndUpdate(
+      {id},
+      payload,
+      { new: true, runValidators: true,session },
+    )
+    if (!updatedUser) {
+      throw new AppError(httpstatus.BAD_REQUEST, 'User is failed to update');
+    }
+    //* updating linked model data based on role
+    const role = updatedUser.role;
+    if(role === 'student') {
+      const updatedStudent = await Student.findOneAndUpdate(
+        { studentId: id },
+        payload,
+        { new: true, runValidators: true, session },
+      );
+      if (!updatedStudent) {
+        throw new AppError(httpstatus.BAD_REQUEST, 'Student is failed to update');
+      }
+    } else if (role === 'alumni') {
+      const updatedAlumni = await Alumni.findOneAndUpdate(
+        { studentId: id },
+        payload,
+        { new: true, runValidators: true, session },
+      );
+      if (!updatedAlumni) {
+        throw new AppError(httpstatus.BAD_REQUEST, 'Alumni is failed to update');
+      }
+    }
+   
+  
+
+
+    await session.commitTransaction();
+    await session.endSession();
+    return updatedUser;
+  } catch (error: any) {
+    await session.abortTransaction();
+    await session.endSession();
+
+    throw new AppError(httpstatus.BAD_REQUEST, 'Failed to update user', error);
+  }
+};
+
 export const userServices = {
   signupStudentIntoDB,
-  signupAlumniIntoDB
+  signupAlumniIntoDB,
+ updateUserDataIntoDB
 };

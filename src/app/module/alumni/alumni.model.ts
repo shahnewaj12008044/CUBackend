@@ -182,4 +182,5 @@ for (const method of queryMiddleware) {
 }
 
 
-export const Alumni = mongoose.model<IAlumni>('Alumni', AlumniSchema);
+ const Alumni = mongoose.model<IAlumni>('Alumni', AlumniSchema);
+ export default Alumni;

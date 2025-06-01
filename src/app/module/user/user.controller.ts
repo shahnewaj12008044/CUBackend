@@ -15,6 +15,8 @@ const signupStudent = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
+
 const signupAlumni = catchAsync(async (req, res) => {
   const { password, alumni} = req.body;
 //   console.log(req.body)
@@ -28,8 +30,21 @@ const signupAlumni = catchAsync(async (req, res) => {
   });
 });
 
+const updateUserData = catchAsync(async (req, res) => {
+  const { studentId } = req.params;
+  const userData  = req.body;
+  const result = await userServices.updateUserDataIntoDB(studentId, userData);
+  sendResponse(res, {
+    statusCode: httpstatus.OK,
+    success: true,
+    message: 'User data updated successfully',
+    data: result,
+  });
+});
+
 export const userController = {
   signupStudent,
   signupAlumni,
+  updateUserData,
 
 };
