@@ -29,7 +29,8 @@ const userSchema = new Schema<IUser , IUserModel>(
       enum: [
         'student',
         'teacher',
-        'alumni'
+        'alumni',
+        'admin',
       ],
       default: 'student',
     },
@@ -67,6 +68,10 @@ userSchema.post("save", function (doc, next) {
 
 userSchema.statics.isUserExist = async function (email: string): Promise<IUser | null> {
   return await this.findOne({ email }).lean();
+}
+userSchema.statics.isJWTIssuedBeforePasswordChanged = async function(passwordChangedTimeStamp:Date, jwtIssuedAt:number){
+  const passwordChangedTime = new Date(passwordChangedTimeStamp).getTime()/1000
+  return passwordChangedTime > jwtIssuedAt
 }
 
 export const User = model<IUser , IUserModel>("User", userSchema)

@@ -14,7 +14,9 @@ const getAllStudentFromDB = async () => {
 };
 
 const getSingleStudentFromDB = async (id: string) => {
+  // console.log('id', id);
   const result = await Student.findOne({ studentId: id });
+  // console.log(result);
   return result;
 };
 
@@ -49,6 +51,7 @@ const updateStudentFromDB = async (id: string, payload: Partial<IStudent>) => {
   //?====================================tried to use transaction and rollback and found a btter way to do it ===============================================
   //! so basicly i was trying to update the user and student data in one transactionbut i realised in doing so i have to write it more than one time ( student, alumni and so on ) so i will just write it once in user to update the role email status etc
   //^ SUMMARY: you can update anything but email, role, status and id. for updating that you have to go to user route and here you will find those options to update
+  //* updating linked data with user from user route is not easy that i though moreover updating from here is more cleaner
   // const session = await mongoose.startSession();
   // try{
   //     session.startTransaction();
