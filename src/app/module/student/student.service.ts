@@ -92,7 +92,22 @@ const updateStudentFromDB = async (id: string, payload: Partial<IStudent>) => {
 const updateLinkedDataFromDB = async (
   id: string,
   payload: Partial<IStudent>,
+  role:string
 ) => {
+if (
+  
+  role === 'student' &&
+  ['isDeleted', 'status'].some(field => field in payload) //^ blocking student from updating (but can update others in me role)
+) {
+  throw new AppError(
+    httpStatus.FORBIDDEN,
+    'You are not allowed to update isDeleted or status as a student.'
+  );
+}
+
+
+
+
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
@@ -111,6 +126,7 @@ const updateLinkedDataFromDB = async (
     }
     const student = await Student.findOneAndUpdate({ studentId: id }, payload, {
       new: true,
+      strict: true, // This will ensure that only fields defined in the schema can be updated
       runValidators: true,
       session,
     });

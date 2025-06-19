@@ -38,8 +38,10 @@ const updateStudent = catchAsync(async (req, res) => {
 
 const updateLinkedData = catchAsync(async (req, res) => {
   const { studentId } = req.params;
+
+  const role = req.user?.role;
   
-  const result = await StudentServices.updateLinkedDataFromDB(studentId,req.body);
+  const result = await StudentServices.updateLinkedDataFromDB(studentId,req.body, role);
   sendResponse(res, {
     statusCode: 200,
     success: true,

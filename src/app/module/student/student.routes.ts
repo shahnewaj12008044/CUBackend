@@ -19,9 +19,9 @@ router.get("/:studentId",auth("alumni","teacher","admin","me"),StudentController
 
 router.put("/:studentId",auth("admin","me"),validationRequest(studentalidations.UpdateStudentSchema),StudentController.updateStudent);
 
-//^ admin and only the student  can update the student info
+//^ admin   can update the student info ( isDeleted, status, email) and student can not update them)
 
-router.patch("/updateLinkedData/:studentId",auth("admin","me"),validationRequest(studentalidations.updateLinkedDataSchema),StudentController.updateLinkedData);
+router.patch("/updateLinkedData/:studentId",auth("alumni","me"),validationRequest(studentalidations.updateLinkedDataSchema),StudentController.updateLinkedData);
 
 
 export const studentRoutes = router;

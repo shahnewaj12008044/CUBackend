@@ -53,7 +53,7 @@ const StudentSchema = new Schema({
 });
 
 
-const queryMiddleware = ['find', 'findOne', 'findOneAndUpdate', 'count', 'countDocuments'];
+const queryMiddleware = ['find', 'findOne', 'count', 'countDocuments'];
 for (const method of queryMiddleware) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   StudentSchema.pre(method as any, applySoftDeleteFilter);

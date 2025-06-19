@@ -24,6 +24,13 @@ export type TUserRole = keyof typeof USER_ROLE;
 
 export interface IUserModel extends Model<IUser>{
     isUserExist(email: string): Promise<IUser | null>;
-      isJWTIssuedBeforePasswordChanged(passwordChangedTimeStamp:Date, jwtIssuedAt:number):Promise<boolean>
-
+    isJWTIssuedBeforePasswordChanged(passwordChangedTimeStamp:Date, jwtIssuedAt:number):Promise<boolean>
+     isJWTIssuedBeforePasswordChanged(
+    passwordChangedTimestamp: Date,
+    jwtIssuedTimestamp: number,
+  ): boolean;
+  isPasswordMathedChecker(
+    plainTextPassword: string,
+    hashedPassword: string,
+  ): Promise<boolean>;
 }
