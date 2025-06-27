@@ -213,7 +213,7 @@ const forgetPassword = async (email: string) => {
 
 
   const emailHtml = otpHtml(otp)
-  console.log(emailHtml);
+
   // const message = `Your OTP for password reset is: ${otp}. It will expire in 10 minutes.`;
 
   await sendMail(user.email, subject, text, emailHtml);
@@ -221,9 +221,51 @@ const forgetPassword = async (email: string) => {
   return { message: 'OTP sent to your email.' };
 };
 
+
+
+
+export const resetPassword = async (email: string, otp: string, newPassword: string) => {
+  // Get user
+  const user = await User.findOne({ email }).select('+resetPasswordOtp +resetPasswordExpire ');
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'This user is not found!');
+  }
+
+  // Check OTP & expiry
+  const isOtpValid = await bcrypt.compare(otp, user.resetPasswordOtp || '');
+  const isOtpExpired = !user.resetPasswordExpire || user.resetPasswordExpire < new Date();
+
+  if (!isOtpValid || isOtpExpired) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid or expired OTP!');
+  }
+
+  // Update password
+// user.password = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
+
+
+ user.password = newPassword;
+ //^ bugStory: so in the first attempt i tried to hash the password during the save but i forgot i created a presave middleware that will hash the pass automatically so actually i was hashing twice a password and thats why the password was not matched in the sign in. so finally i stopped hashin in this service function and let the presave middleware handle it.
+
+
+  
+
+  // Clear OTP fields
+  user.resetPasswordOtp = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  return { message: 'Password has been reset successfully.' };
+};
+
+
+
+
 export const AuthService = {
   loginUserIntoDB,
   refreshToken,
   changePassword,
   forgetPassword,
+  resetPassword,
 };
