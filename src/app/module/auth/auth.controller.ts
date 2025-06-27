@@ -52,9 +52,21 @@ const changePassword = catchAsync(async (req, res) => {
 });
 
 
+const forgetPassword = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const result = await AuthService.forgetPassword(email);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Otp is sent to your email. The otp will expire in 10 minutes.',
+    data: result,
+  });
+});
+
+
 export const AuthController = {
   loginUser,
   refreshToken,
   changePassword,
-
+  forgetPassword,
 };

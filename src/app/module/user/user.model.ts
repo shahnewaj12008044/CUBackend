@@ -34,6 +34,16 @@ const userSchema = new Schema<IUser , IUserModel>(
       ],
       default: 'student',
     },
+    resetPasswordOtp: {
+      type: String,
+      select: false, //! Do not return resetPasswordOtp by default
+      default: '', //! default value is empty string  
+    },
+    resetPasswordExpire: {
+      type: Date,
+      select: false, //! Do not return resetPasswordExpire by default
+       default: null, //! default value is null
+    },
     status: {
       type: String,
       enum: ['in-progress', 'blocked'],
@@ -52,7 +62,10 @@ const userSchema = new Schema<IUser , IUserModel>(
 userSchema.pre("save", async function (next) {
   //hashing password and save into DB:
    //crurrent processed document
-  this.password = await bcrypt.hash(
+  if (!this.isModified("password")) {
+    return next();
+  }
+   this.password = await bcrypt.hash(
     this.password,
     Number(config.bcrypt_salt_rounds)
   );
@@ -67,7 +80,7 @@ userSchema.post("save", function (doc, next) {
 });
 
 userSchema.statics.isUserExist = async function (email: string): Promise<IUser | null> {
-  return await this.findOne({ email }).lean();
+  return await this.findOne({ email })
 }
 userSchema.statics.isJWTIssuedBeforePasswordChanged = async function(passwordChangedTimeStamp:Date, jwtIssuedAt:number){
   const passwordChangedTime = new Date(passwordChangedTimeStamp).getTime()/1000
