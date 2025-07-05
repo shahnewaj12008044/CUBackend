@@ -7,10 +7,23 @@ import Student from './student.model';
 import { IStudent } from './student.interface';
 import { User } from '../user/user.model';
 import validatePayloadKeys from '../../utils/validatePayloadKeys';
+import QueryBuilder from '../../builder/QueryBuilder';
+import { studentSearchableFields } from './student.constants';
 
-const getAllStudentFromDB = async () => {
-  const result = await Student.find({});
+const getAllStudentFromDB = async (query: Record<string, unknown>) => {
+   const studentQuery = new QueryBuilder(
+    Student.find(),
+    query,
+  )
+    .search(studentSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await studentQuery.modelQuery;
   return result;
+ 
 };
 
 const getSingleStudentFromDB = async (id: string) => {
