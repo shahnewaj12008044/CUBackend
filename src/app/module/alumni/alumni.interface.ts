@@ -34,7 +34,7 @@ export interface IResearchInfo {
 }
 
 export interface IAcademiaInfo {
-  university: string;
+  institution: string;
   designation: string; // e.g., Assistant Professor
   department: string;
   startDate: string;

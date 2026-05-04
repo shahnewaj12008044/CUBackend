@@ -1,43 +1,75 @@
 import { Types } from 'mongoose';
 
-interface IStudentSocialMedia {
-  platform: string;
+export type TGender = 'male' | 'female' | 'other';
+export type TProgram = 'Bachelor' | 'Masters' | 'PhD';
+export type TSocialPlatform =
+  | 'facebook'
+  | 'linkedin'
+  | 'github'
+  | 'twitter'
+  | 'website';
+
+export interface IStudentSocialMedia {
+  platform: TSocialPlatform;
   link: string;
 }
-interface IStudentAchievements {
+
+export interface IStudentAchievement {
   title: string;
-  description: string;
+  description?: string;
   year: number;
 }
 
-interface IStudentStudyInfo {
-  CurrentProgram: "Bechelor" | "Masters" | "PhD" ;
-  year: number;
+export interface IStudentStudyInfo {
+  currentProgram: TProgram;
+  currentYear: number;
   semester?: number;
 }
 
-
-
 export interface IStudent {
-  studentId: string; //! this is student role number
+  studentId: string; // university roll / student id
   userId: Types.ObjectId;
+
   name: string;
-  email: string;
-  socialMedia: IStudentSocialMedia[];
-  contactNumber: string;
+  session: string;
+  department: string;
+  faculty: string;
+
+  studyInfo: IStudentStudyInfo;
+
+  contactNumber?: string;
+  gender?: TGender;
+
+  socialMedia?: IStudentSocialMedia[];
   skills?: string[];
   interests?: string[];
-  gender: 'male' | 'female' | 'other';
-  session: string;
-  cvLink?: string;
-  portFolioLink?: string;
-  achievements?: IStudentAchievements[];
+  achievements?: IStudentAchievement[];
 
-  studyInfo: IStudentStudyInfo
-  // isAlumni: boolean;
-  // alumniData?: IAlumniProfile;
-  department: string; //! this will be a reference id of department later
-  faculty: string; //! this will be a reference id of faculty later
-  status: 'in-progress' | 'blocked';
-  isDeleted: boolean;
+  bio?: string;
+  profileImage?: string;
+  cvLink?: string;
+  portfolioLink?: string;
+}
+
+
+export interface IUpdateStudentProfile {
+  name?: string;
+  contactNumber?: string;
+  gender?: TGender;
+  socialMedia?: IStudentSocialMedia[];
+  skills?: string[];
+  interests?: string[];
+  achievements?: IStudentAchievement[];
+  bio?: string;
+  profileImage?: string;
+  cvLink?: string;
+  portfolioLink?: string;
+}
+
+
+export interface IAdminUpdateStudent {
+  session?: string;
+  department?: string;
+  faculty?: string;
+  studyInfo?: IStudentStudyInfo;
 }

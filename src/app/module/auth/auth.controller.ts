@@ -1,84 +1,99 @@
-import config from '../../config';
+import { Request, Response } from 'express';
+import httpStatus from 'http-status-codes';
+
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-import httpStatus from 'http-status-codes';
 import { AuthService } from './auth.service';
-import { JwtPayload } from 'jsonwebtoken';
 
-const loginUser = catchAsync(async (req, res) => {
-  const result = await AuthService.loginUserIntoDB(req.body);
-  const { accessToken, refreshToken } = result;
+
+
+
+
+const registerStudent = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.registerStudent(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: 'Student registered successfully',
+    data: result,
+  });
+});
+
+// const createAdmin = catchAsync(async (req, res) => {
+//   const result = await AuthService.registerAdminIntoDB(req.body); // pass full body
+
+//   sendResponse(res, {
+//     statusCode: httpStatus.CREATED,
+//     success: true,
+//     message: 'Admin created successfully',
+//     data: result,
+//   });
+// });
+const loginUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.loginUser(req.body);
+
+  const { refreshToken, accessToken } = result;
+
   res.cookie('refreshToken', refreshToken, {
+    secure: false,
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
-    sameSite: 'none',
   });
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: 'User login successfully',
-    data: accessToken,
-  });
-});
-
-
-
-const refreshToken = catchAsync(async (req, res) => {
-  
-  // console.log(req.cookies);
-  const { refreshToken } = req.cookies;
-  const result = await AuthService.refreshToken(refreshToken);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Access token is retrieved succesfully!',
-    data: result,
+    message: 'User logged in successfully',
+    data: {
+      accessToken,
+    },
   });
 });
 
-const changePassword = catchAsync(async (req, res) => {
-  const { ...passwordData } = req.body;
-  // console.log(req.user);
+const refreshToken = catchAsync(async (req: Request, res: Response) => {
+  const token = req.cookies?.refreshToken || req.headers.authorization;
 
-  const result = await AuthService.changePassword(req.user as JwtPayload, passwordData);
+  const result = await AuthService.refreshAccessToken(token);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Password is updated succesfully!',
+    message: 'Access token retrieved successfully',
     data: result,
   });
 });
 
-
-const forgetPassword = catchAsync(async (req, res) => {
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.body;
-  const result = await AuthService.forgetPassword(email);
+
+  const result = await AuthService.forgotPassword(email);
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Otp is sent to your email. The otp will expire in 10 minutes.',
+    message: 'Password reset OTP sent successfully',
     data: result,
   });
 });
 
-const resetPassword = catchAsync(async (req, res) => {
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const { email, otp, newPassword } = req.body;
+
   const result = await AuthService.resetPassword(email, otp, newPassword);
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Password is changed successfully.',
+    message: 'Password reset successfully',
     data: result,
   });
 });
 
-
-export const AuthController = {
+export const AuthControllers = {
+  registerStudent,
   loginUser,
   refreshToken,
-  changePassword,
-  forgetPassword,
+  forgotPassword,
   resetPassword,
+  // createAdmin
 };

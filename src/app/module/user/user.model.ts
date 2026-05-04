@@ -1,107 +1,115 @@
-import { model, Schema } from 'mongoose';
-import { IUser, IUserModel } from './user.interface';
+import { HydratedDocument } from 'mongoose';
+import bcrypt from 'bcrypt';
+import { Schema, model } from 'mongoose';
 import config from '../../config';
-import bcrypt from "bcrypt";
+import { IUser, IUserModel } from './user.interface';
 
-const userSchema = new Schema<IUser , IUserModel>(
+const userSchema = new Schema<IUser, IUserModel>(
   {
     id: {
       type: String,
-      required: true,
+      required: [true, 'User id is required'],
       unique: true,
+      trim: true,
     },
+
     email: {
       type: String,
-      required: true,
+      required: [true, 'Email is required'],
       unique: true,
+      trim: true,
+      lowercase: true,
     },
+
     password: {
       type: String,
-      required: true,
-      select: false, //! Do not return password by default
+      required: [true, 'Password is required'],
+      select: 0, // do not return password by default
     },
-    passwordChangedAt: {
-      type: Date,
-      default: Date.now,
-    },
+
     role: {
       type: String,
-      enum: [
-        'student',
-        'teacher',
-        'alumni',
-        'admin',
-      ],
-      default: 'student',
+      enum: ['student', 'teacher', 'alumni', 'admin'],
+      required: [true, 'Role is required'],
     },
-    resetPasswordOtp: {
-      type: String,
-      select: false, //! Do not return resetPasswordOtp by default
-      default: '', //! default value is empty string  
-    },
-    resetPasswordExpire: {
-      type: Date,
-      select: false, //! Do not return resetPasswordExpire by default
-       default: null, //! default value is null
-    },
+
     status: {
       type: String,
-      enum: ['in-progress', 'blocked'],
-      default: 'in-progress',
+      enum: ['active', 'blocked', 'pending'],
+      default: 'pending',
     },
+
     isDeleted: {
       type: Boolean,
       default: false,
     },
+
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    passwordChangedAt: {
+      type: Date,
+    },
+
+    resetPasswordOtp: {
+      type: String,
+      select: 0,
+    },
+
+    resetPasswordExpire: {
+      type: Date,
+      select: 0,
+    },
   },
   {
     timestamps: true,
+    versionKey: false,
   },
 );
 
-userSchema.pre("save", async function (next) {
-  //hashing password and save into DB:
-   //crurrent processed document
-  if (!this.isModified("password")) {
-    return next();
-  }
-   this.password = await bcrypt.hash(
-    this.password,
-    Number(config.bcrypt_salt_rounds)
+
+
+
+userSchema.pre('save', async function (next) {
+  const user = this as HydratedDocument<IUser>;
+
+  if (!user.isModified('password')) return next();
+
+  user.password = await bcrypt.hash(
+    user.password,
+    Number(config.bcrypt_salt_rounds),
   );
+
   next();
 });
 
-
-//post save middleware/hooks:
-userSchema.post("save", function (doc, next) {
-  doc.password = "";
+userSchema.post('save', function (doc, next) {
+  doc.password = '';
   next();
 });
 
-userSchema.statics.isUserExist = async function (email: string): Promise<IUser | null> {
-  return await this.findOne({ email })
-}
-userSchema.statics.isJWTIssuedBeforePasswordChanged = async function(passwordChangedTimeStamp:Date, jwtIssuedAt:number){
-  const passwordChangedTime = new Date(passwordChangedTimeStamp).getTime()/1000
-  return passwordChangedTime > jwtIssuedAt
-}
+userSchema.statics.isUserExist = async function (email: string) {
+  return await User.findOne({ email }).select('+password');
+};
+
+userSchema.statics.isPasswordMatched = async function (
+  plainTextPassword: string,
+  hashedPassword: string,
+) {
+  return await bcrypt.compare(plainTextPassword, hashedPassword);
+};
 
 userSchema.statics.isJWTIssuedBeforePasswordChanged = function (
   passwordChangedTimestamp: Date,
   jwtIssuedTimestamp: number,
 ) {
-  const passwordChangedTime =
-    new Date(passwordChangedTimestamp).getTime() / 1000;
-  return passwordChangedTime > jwtIssuedTimestamp;
+  const changedTime = Math.floor(
+    new Date(passwordChangedTimestamp).getTime() / 1000,
+  );
+
+  return changedTime > jwtIssuedTimestamp;
 };
 
-userSchema.statics.isPasswordMathedChecker = async function (
-  plainTextPassword: string,
-  hashedPassword: string,
-): Promise<boolean> {
-  return await bcrypt.compare(plainTextPassword, hashedPassword);
-};
-
-
-export const User = model<IUser , IUserModel>("User", userSchema)
+export const User = model<IUser, IUserModel>('User', userSchema);

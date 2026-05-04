@@ -1,47 +1,197 @@
-import AppError from '../../errors/AppError';
-import { User } from '../user/user.model';
-import { IJwtPayload, ILoginUser } from './auth.interface';
-import HttpStatus from 'http-status-codes';
 import bcrypt from 'bcrypt';
-import config from '../../config';
-import { createToken, verifyToken } from './auth.utils';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import httpStatus from 'http-status-codes';
+
+import AppError from '../../errors/AppError';
+import config from '../../config';
+import { User } from '../user/user.model';
+import { IJwtPayload, ILoginUser, IRegisterStudent } from './auth.interface';
+import { checkUserStatus, createToken, verifyToken } from './auth.utils';
 import { sendMail } from '../../utils/sendMail';
 import otpHtml from '../../Templates/otp';
+import mongoose from 'mongoose';
+import Student from '../student/student.model';
+// import { Admin } from '../admin/admin.model';
+// import { IAdmin } from '../admin/admin.interface';
 
-const loginUserIntoDB = async (payload: ILoginUser) => {
-  const identifier = payload?.id || payload?.email;
+
+
+const registerStudent = async (payload: IRegisterStudent) => {
+  const { email, password, student } = payload;
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const existingUser = await User.findOne({ email }).session(session);
+    if (existingUser) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        'A user already exists with this email',
+      );
+    }
+
+    const existingStudent = await Student.findOne({
+      studentId: student.studentId,
+    }).session(session);
+
+    if (existingStudent) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        'A student already exists with this student ID',
+      );
+    }
+
+    const createdUsers = await User.create(
+      [
+        {
+          id: student.studentId,
+          email,
+          password,
+          role: 'student',
+          status: 'active',
+          isDeleted: false,
+          isVerified: false,
+        },
+      ],
+      { session },
+    );
+
+    const createdUser = createdUsers[0];
+
+    const createdStudents = await Student.create(
+      [
+        {
+          ...student,
+          userId: createdUser._id,
+        },
+      ],
+      { session },
+    );
+
+    const createdStudent = createdStudents[0];
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    return {
+      user: createdUser,
+      student: createdStudent,
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    await session.endSession();
+    throw error;
+  }
+};
+
+// ─────────────────────────────────────────────
+// CREATE ADMIN  (with transaction)
+// ─────────────────────────────────────────────
+// src/modules/admin/admin.service.ts
+
+// const registerAdminIntoDB = async (payload: {
+//   email: string;
+//   password: string;
+//   admin: IAdmin;
+// }) => {
+//   const { email, password, admin } = payload;
+
+//   const session = await mongoose.startSession();
+
+//   try {
+//     session.startTransaction();
+
+//     // 1. Duplicate checks
+//     const existingUser = await User.findOne({ email }).session(session);
+//     if (existingUser) {
+//       throw new AppError(httpStatus.CONFLICT, 'A user already exists with this email');
+//     }
+
+//     const existingAdmin = await Admin.findOne({ adminId: admin.adminId }).session(session);
+//     if (existingAdmin) {
+//       throw new AppError(httpStatus.CONFLICT, 'An admin already exists with this admin ID');
+//     }
+
+//     // 2. Create auth User
+//     const createdUsers = await User.create(
+//       [
+//         {
+//           id: admin.adminId,
+//           email,
+//           password,
+//           role: 'admin',
+//           status: 'active',
+//           isDeleted: false,
+//           isVerified: false,
+//         },
+//       ],
+//       { session },
+//     );
+
+//     const createdUser = createdUsers[0];
+
+//     // 3. Create Admin profile
+//     const createdAdmins = await Admin.create(
+//       [
+//         {
+//           ...admin,
+//           userId: createdUser._id,
+//         },
+//       ],
+//       { session },
+//     );
+
+//     const createdAdmin = createdAdmins[0];
+
+//     await session.commitTransaction();
+//     await session.endSession();
+
+//     return {
+//       user: createdUser,
+//       admin: createdAdmin,
+//     };
+//   } catch (error) {
+//     await session.abortTransaction();
+//     await session.endSession();
+//     throw error;
+//   }
+// };
+
+const loginUser = async (payload: ILoginUser) => {
+  const identifier = payload.id || payload.email;
+
+  if (!identifier || !payload.password) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Identifier and password are required',
+    );
+  }
+
   const user = await User.findOne({
     $or: [{ id: identifier }, { email: identifier }],
   }).select('+password');
-  // console.log(user)
+
   if (!user) {
-    throw new AppError(HttpStatus.NOT_FOUND, 'User not found');
-  }
-  const isDeleted = user?.isDeleted;
-  if (isDeleted) {
-    throw new AppError(HttpStatus.NOT_FOUND, 'User is deleted');
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  const isBlocked = user?.status;
-  if (isBlocked === 'blocked') {
-    throw new AppError(HttpStatus.NOT_FOUND, 'User status is blocked');
-  }
+  checkUserStatus(user);
 
-  const isPasswordMatched = await User.isPasswordMathedChecker(
-    payload?.password,
-    user?.password,
+  const isPasswordMatched = await User.isPasswordMatched(
+    payload.password,
+    user.password,
   );
-  // console.log(isPasswordMatched)
+
   if (!isPasswordMatched) {
-    throw new AppError(HttpStatus.UNAUTHORIZED, 'wrong password!!!');
+    throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid credentials');
   }
 
   const jwtPayload: IJwtPayload = {
-    id: user?.id,
-    email: user?.email,
-    role: user?.role,
+    id: user.id,
+    email: user.email,
+    role: user.role,
   };
 
   const accessToken = createToken(
@@ -50,14 +200,11 @@ const loginUserIntoDB = async (payload: ILoginUser) => {
     config.jwt_access_expires as jwt.SignOptions['expiresIn'],
   );
 
-  //generating a refresh token
   const refreshToken = createToken(
     jwtPayload,
     config.jwt_refresh_secret as string,
     config.jwt_refresh_expires as jwt.SignOptions['expiresIn'],
   );
-
-  // return { accessToken, refreshToken };
 
   return {
     accessToken,
@@ -65,45 +212,40 @@ const loginUserIntoDB = async (payload: ILoginUser) => {
   };
 };
 
-const refreshToken = async (token: string) => {
-  // checking if the given token is valid
-  const decoded = verifyToken(token, config.jwt_refresh_secret as string);
+const refreshAccessToken = async (token: string) => {
+  if (!token) {
+    throw new AppError(httpStatus.UNAUTHORIZED, 'Refresh token is required');
+  }
 
-  // console.log(decoded)
-  const { email, iat } = decoded as JwtPayload;
-  // console.log(email, id, role, iat)
+  const decoded = verifyToken(
+    token,
+    config.jwt_refresh_secret as string,
+  ) as JwtPayload;
 
-  // checking if the user is exist
-  const user = await User.isUserExist(email);
+  const { id, iat } = decoded;
+
+  const user = await User.findOne({ id });
 
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
-  }
-  // checking if the user is already deleted
-  const isDeleted = user?.isDeleted;
-
-  if (isDeleted) {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  // checking if the user is blocked
-  const userStatus = user?.status;
-
-  if (userStatus === 'blocked') {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
-  }
+  checkUserStatus(user);
 
   if (
     user.passwordChangedAt &&
-    (await User.isJWTIssuedBeforePasswordChanged(
+    User.isJWTIssuedBeforePasswordChanged(
       user.passwordChangedAt,
       iat as number,
-    ))
+    )
   ) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized !');
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      'Password has been changed. Please log in again.',
+    );
   }
 
-  const jwtPayload = {
+  const jwtPayload: IJwtPayload = {
     id: user.id,
     email: user.email,
     role: user.role,
@@ -120,152 +262,87 @@ const refreshToken = async (token: string) => {
   };
 };
 
-const changePassword = async (
-  userData: JwtPayload,
-  payload: { oldPassword: string; newPassword: string },
-) => {
-  // checking if the user is exist
-  //! const user = await User.isUserExist(userData.email);
-  //^ the bug story:: here i was checking the user pass with the old pass now isUserExist is without pass so the pass in user model is not coming that made the error in the pass checking
-  const user = await User.findOne({ id: userData?.id })
-    .select('+password')
-    .lean();
-  // console.log(user);
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
-  }
-  // checking if the user is already deleted
-
-  const isDeleted = user?.isDeleted;
-
-  if (isDeleted) {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
+const forgotPassword = async (email: string) => {
+  if (!email) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Email is required');
   }
 
-  // checking if the user is blocked
-
-  const userStatus = user?.status;
-
-  if (userStatus === 'blocked') {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
-  }
-
-  //checking if the password is correct
-
-  const isPasswordMatched = await User.isPasswordMathedChecker(
-    payload.oldPassword,
-    user?.password,
-  );
-
-  if (!isPasswordMatched)
-    throw new AppError(httpStatus.FORBIDDEN, 'Password do not matched');
-
-  //hash new password
-
-  const newHashedPassword = await bcrypt.hash(
-    payload.newPassword,
-    Number(config.bcrypt_salt_rounds),
-  );
-  await User.findOneAndUpdate(
-    {
-      id: userData.id,
-      role: userData.role,
-    },
-    {
-      password: newHashedPassword,
-      passwordChangedAt: new Date(),
-    },
-  );
-
-  return null;
-};
-
-const forgetPassword = async (email: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = (await User.isUserExist(email)) as any;
+  const user = await User.findOne({ email });
 
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  const isDeleted = user?.isDeleted;
-  if (isDeleted) {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
-  }
-  const userStatus = user?.status;
-  if (userStatus === 'blocked') {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
-  }
-  // Generate OTP (6-digit random number)
+  checkUserStatus(user);
+
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-  // Optional: Store hashed OTP + expiry in DB
-  user.resetPasswordOtp = await bcrypt.hash(otp, Number(config.bcrypt_salt_rounds));
+  user.resetPasswordOtp = await bcrypt.hash(
+    otp,
+    Number(config.bcrypt_salt_rounds),
+  );
+  user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000);
 
-  user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-  // console.log(user.resetPasswordOtp, user.resetPasswordExpire);
   await user.save();
- 
 
-  // Send OTP
-  const text = `Your OTP for password reset is: ${otp}. It will expire in 10 minutes.`;
   const subject = 'Your Password Reset OTP';
-
-
-  const emailHtml = otpHtml(otp)
-
-  // const message = `Your OTP for password reset is: ${otp}. It will expire in 10 minutes.`;
+  const text = `Your OTP for password reset is: ${otp}. It will expire in 10 minutes.`;
+  const emailHtml = otpHtml(otp);
 
   await sendMail(user.email, subject, text, emailHtml);
 
-  return { message: 'OTP sent to your email.' };
+  return {
+    message: 'OTP sent to your email successfully',
+  };
 };
 
+const resetPassword = async (
+  email: string,
+  otp: string,
+  newPassword: string,
+) => {
+  if (!email || !otp || !newPassword) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Email, OTP, and new password are required',
+    );
+  }
 
-
-
-export const resetPassword = async (email: string, otp: string, newPassword: string) => {
-  // Get user
-  const user = await User.findOne({ email }).select('+resetPasswordOtp +resetPasswordExpire ');
+  const user = await User.findOne({ email }).select(
+    '+resetPasswordOtp +resetPasswordExpire',
+  );
 
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'This user is not found!');
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  // Check OTP & expiry
+  checkUserStatus(user);
+
   const isOtpValid = await bcrypt.compare(otp, user.resetPasswordOtp || '');
-  const isOtpExpired = !user.resetPasswordExpire || user.resetPasswordExpire < new Date();
+  const isOtpExpired =
+    !user.resetPasswordExpire || user.resetPasswordExpire < new Date();
 
   if (!isOtpValid || isOtpExpired) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid or expired OTP!');
+    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid or expired OTP');
   }
 
-  // Update password
-// user.password = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
-
-
- user.password = newPassword;
- //^ bugStory: so in the first attempt i tried to hash the password during the save but i forgot i created a presave middleware that will hash the pass automatically so actually i was hashing twice a password and thats why the password was not matched in the sign in. so finally i stopped hashin in this service function and let the presave middleware handle it.
-
-
-  
-
-  // Clear OTP fields
+  user.password = newPassword;
+  user.passwordChangedAt = new Date();
   user.resetPasswordOtp = undefined;
   user.resetPasswordExpire = undefined;
 
   await user.save();
 
-  return { message: 'Password has been reset successfully.' };
+  return {
+    message: 'Password has been reset successfully',
+  };
 };
 
-
-
-
 export const AuthService = {
-  loginUserIntoDB,
-  refreshToken,
-  changePassword,
-  forgetPassword,
+  registerStudent,
+  loginUser,
+  refreshAccessToken,
+  forgotPassword,
   resetPassword,
+  // registerAdminIntoDB
 };

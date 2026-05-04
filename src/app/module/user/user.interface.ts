@@ -1,41 +1,58 @@
 import { Model } from 'mongoose';
 
+export type TUserRole = 'student' | 'teacher' | 'alumni' | 'admin';
+export type TUserStatus = 'active' | 'blocked' | 'pending';
+
 export interface IUser {
-  id: string;
+  id: string; // custom user id (not Mongo _id)
+
   email: string;
-  password: string; //!password has to be hashed
-  passwordChangedAt: Date;
-  role: 'student' | 'teacher' | 'alumni' | 'admin';
-  resetPasswordOtp?: string; //! this is used to reset the password,
-  resetPasswordExpire?: Date; //! this is used to reset the password
-  status: 'in-progress' | 'blocked';
+  password: string;
+
+  role: TUserRole; // system-level role
+  status: TUserStatus;
+
   isDeleted: boolean;
+  isVerified: boolean;
+
+  passwordChangedAt?: Date;
+
+  resetPasswordOtp?: string;
+  resetPasswordExpire?: Date;
 }
-export const USER_ROLE = {
-  student: 'student',
-  teacher: 'teacher',
-  alumni: 'alumni',
-  admin: 'admin',
-  me: 'me',
-} as const;
 
-export type TUserRole = keyof typeof USER_ROLE;
+export interface IUpdateUserAccount {
+  email?: string;
+}
 
-//! role : "superadmin" | "departmentadmin" | "facultyadmin"; i would rather use them as post of the club
+export interface IAdminUpdateUser {
+  role?: TUserRole;
+  status?: TUserStatus;
+  isDeleted?: boolean;
+  isVerified?: boolean;
+}
 
 export interface IUserModel extends Model<IUser> {
   isUserExist(email: string): Promise<IUser | null>;
-  isJWTIssuedBeforePasswordChanged(
-    passwordChangedTimeStamp: Date,
-    jwtIssuedAt: number,
+  isPasswordMatched(
+    plainTextPassword: string,
+    hashedPassword: string,
   ): Promise<boolean>;
   isJWTIssuedBeforePasswordChanged(
     passwordChangedTimestamp: Date,
     jwtIssuedTimestamp: number,
   ): boolean;
-  isPasswordMathedChecker(
-    plainTextPassword: string,
-    hashedPassword: string,
-  ): Promise<boolean>;
 }
 
+export const USER_ROLE = {
+  student: 'student',
+  teacher: 'teacher',
+  alumni: 'alumni',
+  admin: 'admin',
+} as const;
+
+export const USER_STATUS = {
+  active: 'active',
+  blocked: 'blocked',
+  pending: 'pending',
+} as const;

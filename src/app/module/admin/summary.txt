@@ -1,0 +1,2 @@
+all the routes but the register via invite are checked
+there is a bug here the update route is authed by admin role and the route direc

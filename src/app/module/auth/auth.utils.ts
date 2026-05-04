@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import AppError from '../../errors/AppError';
 import bcrypt from 'bcrypt';
+import httpStatus from 'http-status-codes';
 
 export const createToken = (
   jwtPayload: { id?: string; email?: string; role: string },
@@ -21,6 +22,19 @@ export const verifyToken = (token: string, secret: string) => {
       "Invalid token, please login again !",
       error?.message || "Token verification failed" 
     )
+  }
+};
+
+export const checkUserStatus = (user: {
+  isDeleted: boolean;
+  status: string;
+}) => {
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'User account is deleted');
+  }
+
+  if (user.status === 'blocked') {
+    throw new AppError(httpStatus.FORBIDDEN, 'User account is blocked');
   }
 };
 

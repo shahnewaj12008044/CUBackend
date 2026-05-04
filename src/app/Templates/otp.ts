@@ -4,7 +4,7 @@ const otpHtml = (otp: string) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Your OTP for [Your Service Name]</title>
+<title>Your OTP for COBIANS</title>
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
@@ -84,7 +84,7 @@ const otpHtml = (otp: string) => {
     </div>
     <div class="content">
       <p>Hi there,</p>
-      <p>You recently requested a One-Time Password (OTP) to complete an action on **[Your Service Name]**.</p>
+      <p>You recently requested a One-Time Password (OTP) to complete an action on COBIANS.</p>
       <p>Please use the following OTP to proceed:</p>
       <div class="otp-box">
         ${otp}
@@ -94,8 +94,8 @@ const otpHtml = (otp: string) => {
       <p class="warning-text">For your security, never share this code.</p>
     </div>
     <div class="footer">
-      <p>&copy; 2025 [Your Company Name]. All rights reserved.</p>
-      <p>If you have any questions, please contact our support team at <a href="mailto:support@[yourcompany.com]">support@[yourcompany.com]</a></p>
+      <p>&copy; 2025 COBIANS. All rights reserved.</p>
+      <p>If you have any questions, please contact our support team at <a href="mailto:cobians@gmail.com"></a>cobians@gmail.com</p>
     </div>
   </div>
 </body>

@@ -43,7 +43,7 @@ const ResearchInfoSchema = new Schema(
 
 const AcademiaInfoSchema = new Schema(
   {
-    university: String,
+    institution: String,
     designation: String,
     department: String,
     startDate: String,

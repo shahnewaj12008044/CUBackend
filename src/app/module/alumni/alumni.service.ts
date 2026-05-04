@@ -6,9 +6,21 @@ import { IAlumni } from './alumni.interface';
 import Alumni from './alumni.model';
 import httpStatus from 'http-status-codes';
 import validatePayloadKeys from '../../utils/validatePayloadKeys';
+import QueryBuilder from '../../builder/QueryBuilder';
+import { alumniSearchableFields } from './alumni.constants';
 
-const getAllAlumniFromDB = async () => {
-  const result = await Alumni.find({});
+const getAllAlumniFromDB = async (query: Record<string, unknown>) => {
+   const alumniQuery = new QueryBuilder(
+    Alumni.find(),
+    query,
+  )
+    .search(alumniSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await alumniQuery.modelQuery;
   return result;
 };
 
@@ -85,10 +97,14 @@ const updateAlumniLinkedDataFromDB = async(id : string,payload: Partial<IAlumni>
  }
 }
 
+
+
+
 export const AlumniServices = {
   getAllAlumniFromDB,
   getSingleAlumniFromDB,
   updateAlumniFromDB,
   updateAlumniLinkedDataFromDB,
+ 
 };
  

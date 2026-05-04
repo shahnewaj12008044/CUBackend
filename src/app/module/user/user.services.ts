@@ -1,165 +1,130 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import mongoose from 'mongoose';
-import { IStudent } from '../student/student.interface';
-import { IUser } from './user.interface';
-import { User } from './user.model';
+import httpStatus from 'http-status-codes';
 import AppError from '../../errors/AppError';
-import httpstatus from 'http-status-codes';
-import Student from '../student/student.model';
-import { IAlumni } from '../alumni/alumni.interface';
+import { User } from './user.model';
+import {
+  IAdminUpdateUser,
+  IUpdateUserAccount,
+} from './user.interface';
+import bcrypt from 'bcrypt';
+import config from '../../config';
 
+const getSingleUserFromDB = async (id: string) => {
+  const user = await User.findOne({ id });
 
-import Alumni from '../alumni/alumni.model';
-
-const signupStudentIntoDB = async (password: string, payload: IStudent) => {
-  const user: Partial<IUser> = {};
-  //   console.log('payload', payload);
-  //^ ===================== creating user object=========================
-  user.id = payload.studentId;
-  user.email = payload.email;
-  user.password = password;
-  user.role = 'student';
-  //   console.log('user', user);
-  //!============= checking the validity of user=================================
-  
-  const isUserExist = await User.isUserExist(user.email);
-  if (isUserExist) {
-    throw new AppError(httpstatus.BAD_REQUEST, 'User already exist');
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  //^ ============= creating transection and rollback to signup for student and user=================
-  const session = await mongoose.startSession();
-  try {
-    session.startTransaction();
-    const newUser = await User.create([user], { session });
-   // console.log(newUser)
-    if (!newUser || newUser.length === 0) {
-      throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
-    }
-    // console.log('newUser', newUser);
-
-    payload.userId = newUser[0]._id;
-    // console.log('payload', payload.userId);
-    const newStudent = await Student.create([payload], { session });
-    // console.log('newStudent', newStudent);
-    if (!newStudent || newStudent.length === 0) {
-      throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
-    }
-    await session.commitTransaction();
-    await session.endSession();
-    return newStudent[0];
-  } catch (error: any) {
-    await session.abortTransaction();
-    await session.endSession();
-    // console.log(error)
-    throw new AppError(
-      httpstatus.INTERNAL_SERVER_ERROR,
-      'An error occurred while signing up the student into the database',
-      error,
-    );
-  }
+  return user;
 };
 
-const signupAlumniIntoDB = async (password: string, payload: IAlumni) => {
-  const user: Partial<IUser> = {};
-  //   console.log('payload', payload);
-  //^ ===================== creating user object=========================
-  user.id = payload.studentId;
-  user.email = payload.email;
-  user.password = password;
-  user.role = 'alumni';
-  //   console.log('user', user);
-  //!============= checking the validity of user=================================
-  
-  const isUserExist = await User.isUserExist(user.email);
-  if (isUserExist) {
-    throw new AppError(httpstatus.BAD_REQUEST, 'User already exist');
-  }
+const getAllUsersFromDB = async () => {
+  const users = await User.find({ isDeleted: false });
 
-  const session = await mongoose.startSession();
-  try{
-    session.startTransaction();
-    const newUser = await User.create([user], { session });
-    if( !newUser || newUser.length === 0) {
-      throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
-    }
-    payload.userId = newUser[0]._id;
-    const newAlumni = await Alumni.create([payload], { session });
-    if( !newAlumni || newAlumni.length === 0) {
-      throw new AppError(httpstatus.BAD_REQUEST, 'User creation failed');
-    }
-    await session.commitTransaction();
-    await session.endSession();
-    return newAlumni[0];
-  }catch(error: any) {
-    await session.abortTransaction();
-    await session.endSession();
-    throw new AppError(
-      httpstatus.INTERNAL_SERVER_ERROR,
-      'An error occurred while signing up the alumni into the database',
-      error,
-    );
-  }
-}
-
-
-//^ this is actually for updating user data linked to another model like status, role and also isdeleted
-const updateUserDataIntoDB = async (id:string, payload: Partial<IUser>) => {
-  const forbiddenFields:string[] = ['id', 'password','role', 'passwordChangedAt', 'createdAt', 'updatedAt'];
-  for (const field of forbiddenFields){
-    if (field in payload){
-      throw new AppError(httpstatus.BAD_REQUEST, `You cannot update ${field} field`);
-    }
-  }
-  const session = await mongoose.startSession();
-  try {
-    session.startTransaction();
-    const updatedUser = await User.findOneAndUpdate(
-      {id},
-      payload,
-      { new: true, runValidators: true,session },
-    )
-    if (!updatedUser) {
-      throw new AppError(httpstatus.BAD_REQUEST, 'User is failed to update');
-    }
-    //* updating linked model data based on role
-    const role = updatedUser.role;
-    if(role === 'student') {
-      const updatedStudent = await Student.findOneAndUpdate(
-        { studentId: id },
-        payload,
-        { new: true, runValidators: true, session },
-      );
-      if (!updatedStudent) {
-        throw new AppError(httpstatus.BAD_REQUEST, 'Student is failed to update');
-      }
-    } else if (role === 'alumni') {
-      const updatedAlumni = await Alumni.findOneAndUpdate(
-        { studentId: id },
-        payload,
-        { new: true, runValidators: true, session },
-      );
-      if (!updatedAlumni) {
-        throw new AppError(httpstatus.BAD_REQUEST, 'Alumni is failed to update');
-      }
-    }
-   
-  
-
-
-    await session.commitTransaction();
-    await session.endSession();
-    return updatedUser;
-  } catch (error: any) {
-    await session.abortTransaction();
-    await session.endSession();
-
-    throw new AppError(httpstatus.BAD_REQUEST, 'Failed to update user', error);
-  }
+  return users;
 };
 
-export const userServices = {
-  signupStudentIntoDB,
-  signupAlumniIntoDB,
- updateUserDataIntoDB
+const updateMyAccountInDB = async (
+  id: string,
+  payload: IUpdateUserAccount,
+) => {
+  const allowedFields = ['email'];
+
+  const payloadKeys = Object.keys(payload);
+  const isValid = payloadKeys.every((key) =>
+    allowedFields.includes(key),
+  );
+
+  if (!isValid) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Only email can be updated',
+    );
+  }
+
+  const updatedUser = await User.findOneAndUpdate({ id }, payload, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!updatedUser) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  return updatedUser;
+};
+
+const adminUpdateUserInDB = async (
+  id: string,
+  payload: IAdminUpdateUser,
+) => {
+  const updatedUser = await User.findOneAndUpdate({ id }, payload, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!updatedUser) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  return updatedUser;
+};
+
+const softDeleteUserFromDB = async (id: string) => {
+  const deletedUser = await User.findOneAndUpdate(
+    { id },
+    { isDeleted: true, status: 'blocked' },
+    { new: true, runValidators: true },
+  );
+
+  if (!deletedUser) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  return deletedUser;
+};
+
+const changePasswordInDB = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+) => {
+  const user = await User.findOne({ id: userId }).select('+password');
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  const isMatch = await User.isPasswordMatched(
+    oldPassword,
+    user.password,
+  );
+
+  if (!isMatch) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      'Old password is incorrect',
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(
+    newPassword,
+    Number(config.bcrypt_salt_rounds),
+  );
+
+  user.password = hashedPassword;
+  user.passwordChangedAt = new Date();
+
+  await user.save();
+
+  return null;
+};
+
+export const UserServices = {
+  getSingleUserFromDB,
+  getAllUsersFromDB,
+  updateMyAccountInDB,
+  adminUpdateUserInDB,
+  softDeleteUserFromDB,
+  changePasswordInDB,
 };

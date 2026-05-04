@@ -18,5 +18,7 @@ export default {
     google_access_token : process.env.GOOGLE_OAUTH2_ACCESS_TOKEN,
     google_refresh_token : process.env.GOOGLE_REFRESH_TOKEN,
     senders_email : process.env.SENDERS_EMAIL,
+    smtpPass: process.env.SMTP_PASSWORD,
+    FRONTEND_URL : process.env.FRONTEND_URL,
 }
 

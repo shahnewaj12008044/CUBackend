@@ -1,0 +1,4 @@
+Auth is tested✔
+In admin registration the flow is first an admin will invite a link to sign up another admin ✔
+Checking student 
+checking alumni

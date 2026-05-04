@@ -1,15 +1,36 @@
-import { Router } from "express";
-import { userController } from "./user.controller";
-import validationRequest from "../../middleware/validationRequest";
-import { studentalidations } from "../student/student.validation";
-import { alumniValidation } from "../alumni/alumni.validation";
+import express from 'express';
+import auth from '../../middleware/auth';
 
+import { UserControllers } from './user.controller';
+import { UserValidations } from './user.validation';
+import validationRequest from '../../middleware/validationRequest';
 
-const router = Router();
+const router = express.Router();
 
-router.post ("/signup-student",validationRequest(studentalidations.studentSignupValidationSchema), userController.signupStudent);
-router.post ("/signup-alumni",validationRequest(alumniValidation.alumniSignupValidationSchema), userController.signupAlumni);
-router.put("/:studentId", userController.updateUserData);
+router.get('/', auth('admin'), UserControllers.getAllUsers);
+router.get('/:id', auth('admin'), UserControllers.getSingleUser);
 
+router.patch(
+  '/me/account',
+  auth('student', 'teacher', 'alumni', 'admin'),
+  validationRequest(UserValidations.updateMyAccountValidationSchema),
+  UserControllers.updateMyAccount,
+);
 
-export const userRoutes = router;
+router.patch(
+  '/me/change-password',
+  auth('student', 'teacher', 'alumni', 'admin'),
+  validationRequest(UserValidations.changePasswordValidationSchema),
+  UserControllers.changePassword,
+);
+
+router.patch(
+  '/:id',
+  auth('admin'),
+  validationRequest(UserValidations.adminUpdateUserValidationSchema),
+  UserControllers.adminUpdateUser,
+);
+
+router.delete('/:id', auth('admin'), UserControllers.softDeleteUser);
+
+export const UserRoutes = router;

@@ -114,7 +114,7 @@ if (
 ) {
   throw new AppError(
     httpStatus.FORBIDDEN,
-    'You are not allowed to update isDeleted or status as a student.'
+    'You are not allowed to delete or change user status as a student.'
   );
 }
 

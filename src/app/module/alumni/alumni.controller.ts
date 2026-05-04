@@ -3,7 +3,8 @@ import sendResponse from "../../utils/sendResponse";
 import { AlumniServices } from "./alumni.service";
 
 const getAllAlumni = catchAsync(async (req, res) => {
-    const result = await AlumniServices.getAllAlumniFromDB();
+
+    const result = await AlumniServices.getAllAlumniFromDB(req.query);
     sendResponse(res, {
         statusCode: 200,
         success: true,
