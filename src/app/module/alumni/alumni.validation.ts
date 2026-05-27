@@ -1,134 +1,160 @@
-import { z } from "zod";
+import { z } from 'zod';
+import { AlumniCategory } from './alumni.interface';
 
-// Enums
-const AlumniCategoryEnum = z.enum(["corporate", "research", "academia", "administration", "business", "other"]);
-const GenderEnum = z.enum(["male", "female", "other"]);
-const DegreeEnum = z.enum(["MS", "PhD", "Postdoc", "Research Associate", "Other"]);
-
-
-// Sub-schemas
-const LocationSchema = z.object({
-  country: z.string(),
-  city: z.string(),
-});
-
-const OnlinePresenceSchema = z.object({
-  platform: z.string(),
-  link: z.string().url(),
-});
-
-const AlumniAchievementsSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  year: z.number().int(),
-});
-
-const CorporateInfoSchema = z.object({
-  company: z.string(),
-  designation: z.string(),
-  description: z.string(),
-  startDate: z.string(),
+const corporateInfoSchema = z.object({
+  company: z.string().min(1),
+  designation: z.string().min(1),
+  description: z.string().optional(),
+  startDate: z.string().min(1),
   endDate: z.string().optional(),
-  currentlyWorking: z.boolean(),
+  currentlyWorking: z.boolean().optional(),
 });
 
-const ResearchInfoSchema = z.object({
-  institution: z.string(),
-  researchArea: z.array(z.string()),
-  degree: DegreeEnum,//! degree is not a professional word to explain. later it has to be changed
-  supervisor: z.string(),
-  startDate: z.string(),
+const researchInfoSchema = z.object({
+  institution: z.string().min(1),
+  researchArea: z.array(z.string()).min(1),
+  designation: z.enum(['MS', 'PhD', 'Postdoc', 'Research Associate', 'Other']),
+  supervisor: z.string().optional(),
+  startDate: z.string().min(1),
   endDate: z.string().optional(),
-  currentlyWorking: z.boolean(),
-  description: z.string(),
+  currentlyWorking: z.boolean().optional(),
+  description: z.string().optional(),
 });
 
-const AcademiaInfoSchema = z.object({
-  university: z.string(),
-  position: z.string(),
-  department: z.string(),
-  startDate: z.string(),
+const academiaInfoSchema = z.object({
+  institution: z.string().min(1),
+  designation: z.string().min(1),
+  department: z.string().min(1),
+  startDate: z.string().min(1),
   endDate: z.string().optional(),
-  currentlyWorking: z.boolean(),
-  description: z.string(),
+  currentlyWorking: z.boolean().optional(),
+  description: z.string().optional(),
 });
 
-const AdministrationInfoSchema = z.object({
-  organization: z.string(),
-  position: z.string(),
-  startDate: z.string(),
+const administrationInfoSchema = z.object({
+  organization: z.string().min(1),
+  designation: z.string().min(1),
+  startDate: z.string().min(1),
   endDate: z.string().optional(),
-  currentlyWorking: z.boolean(),
-  description: z.string(),
+  currentlyWorking: z.boolean().optional(),
+  description: z.string().optional(),
 });
 
-const BusinessInfoSchema = z.object({
-  businessName: z.string(),
-  startDate: z.string(),
-  endDate:  z.string().optional(),
-  currentlyWorking: z.boolean(),
-  description: z.string(),
-  location: z.string(),
-  website: z.string().url(),
-});
-
-const OtherInfoSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  startDate: z.string(),
+const businessInfoSchema = z.object({
+  businessName: z.string().min(1),
+  designation: z.string().min(1),
+  startDate: z.string().min(1),
   endDate: z.string().optional(),
-  currentlyWorking: z.boolean(),
-  location: z.string(),
+  currentlyWorking: z.boolean().optional(),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  website: z.string().url('Invalid website URL').optional(),
 });
 
-// Alumni Profile Schema
-const AlumniProfileSchema = z.object({
-  alumniCategory: AlumniCategoryEnum,
-  corporateInfo: z.array(CorporateInfoSchema).optional(),
-  researchInfo: z.array(ResearchInfoSchema).optional(),
-  academiaInfo: z.array(AcademiaInfoSchema).optional(),
-  administrationInfo: z.array(AdministrationInfoSchema).optional(),
-  businessInfo: z.array(BusinessInfoSchema).optional(),
-  otherInfo: z.array(OtherInfoSchema).optional(),
-
+const otherInfoSchema = z.object({
+  title: z.string().min(1),
+  designation: z.string().optional(),
+  description: z.string().min(1),
+  startDate: z.string().min(1),
+  endDate: z.string().optional(),
+  currentlyWorking: z.boolean().optional(),
+  location: z.string().optional(),
 });
 
-// Main Alumni Schema
-const alumniSchema = z.object({
-   studentId: z
-    .string()
-    .regex(/^\d+$/, { message: 'Student ID must be numeric string only' }),
-  name: z.string(),
-  gender: GenderEnum,
-  email: z.string().email(),
-  graduationYear: z.number().int(),
-  contactNumber: z.string(),
-  onlinePresence: z.array(OnlinePresenceSchema).optional(),
-  willingTomentor: z.boolean(),
-  location: LocationSchema,
-  session: z.string(),
-  achievements: z.array(AlumniAchievementsSchema).optional(),
-  portfolioLink: z.string().url().optional(),
-  alumniProfile: AlumniProfileSchema,
-  department: z.string(),
-  faculty: z.string(),
-
+const locationSchema = z.object({
+  country: z.string().min(1),
+  city: z.string().min(1),
 });
 
-const alumniSignupValidationSchema = z.object({
+const onlinePresenceSchema = z.object({
+  platform: z.string().min(1),
+  link: z.string().url('Invalid URL'),
+});
+
+const achievementSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  year: z.number().int().min(1900).max(new Date().getFullYear()),
+});
+
+const alumniProfileSchema = z.object({
+  alumniCategory: z.nativeEnum(AlumniCategory),
+  corporateInfo: z.array(corporateInfoSchema).optional(),
+  researchInfo: z.array(researchInfoSchema).optional(),
+  academiaInfo: z.array(academiaInfoSchema).optional(),
+  administrationInfo: z.array(administrationInfoSchema).optional(),
+  businessInfo: z.array(businessInfoSchema).optional(),
+  otherInfo: z.array(otherInfoSchema).optional(),
+});
+
+// ── For admin creating alumni manually ──
+
+export const createAlumniSchema = z.object({
   body: z.object({
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    alumni: alumniSchema,
+    email: z.string().email(),
+    password: z.string().min(8),
+
+    alumni: z.object({
+      studentId: z.string().min(1),
+      name: z.string().min(1),
+      gender: z.enum(['male', 'female', 'other']),
+      graduationYear: z.number().int().min(1900).max(new Date().getFullYear()),
+      contactNumber: z.string().min(1),
+      session: z.string().min(1),
+      department: z.string().min(1),
+      faculty: z.string().min(1),
+      willingToMentor: z.boolean(),
+
+      location: locationSchema,
+      onlinePresence: z.array(onlinePresenceSchema).optional(),
+      achievements: z.array(achievementSchema).optional(),
+      portfolioLink: z.string().url().optional(),
+      bio: z.string().optional(),
+
+      alumniProfile: alumniProfileSchema,
+    }),
   }),
 });
 
 
+// ── For alumni updating their own profile ──
+const updateAlumniSchema = z.object({
+  body: z
+    .object({
+      name: z.string().min(1).optional(),
+      gender: z.enum(['male', 'female', 'other']).optional(),
+      graduationYear: z.number().int().optional(),
+      contactNumber: z.string().min(1).optional(),
+      session: z.string().optional(),
+      department: z.string().optional(),
+      faculty: z.string().optional(),
+      willingToMentor: z.boolean().optional(),
+      location: locationSchema.partial().optional(),
+      onlinePresence: z.array(onlinePresenceSchema).optional(),
+      achievements: z.array(achievementSchema).optional(),
+      portfolioLink: z.string().url().optional(),
+      bio: z.string().optional(),
+      alumniProfile: alumniProfileSchema.partial().optional(),
+    })
+    .refine((data) => Object.keys(data).length > 0, {
+      message: 'At least one field must be provided for update',
+    }),
+});
 
-//! here update validation has a lot to da in it. I didn't think about it.
-const UpdateAlumniSchema = alumniSchema.partial();
+// ── For updating linked User fields ──
+const updateAlumniLinkedSchema = z.object({
+  body: z
+    .object({
+      email: z.string().email().optional(),
+      status: z.enum(['active', 'blocked', 'pending']).optional(),
+    })
+    .refine((data) => Object.keys(data).length > 0, {
+      message: 'At least one field must be provided',
+    }),
+});
 
-// Export all schemas
 export const alumniValidation = {
-  alumniSignupValidationSchema,
-  UpdateAlumniSchema,
+  createAlumniSchema,
+  updateAlumniSchema,
+  updateAlumniLinkedSchema,
 };

@@ -1,24 +1,58 @@
-import { Router } from "express";
-import { AlumniController } from "./alumni.controller";
-import validationRequest from "../../middleware/validationRequest";
-import { alumniValidation } from "./alumni.validation";
-import auth from "../../middleware/auth";
-
+import { Router } from 'express';
+import { AlumniController } from './alumni.controller';
+import validationRequest from '../../middleware/validationRequest';
+import { alumniValidation } from './alumni.validation';
+import auth from '../../middleware/auth';
 
 const router = Router();
 
-// alumni, teacher and admin can access all alumni data
-router.get("/",auth("alumni","teacher","admin"),AlumniController.getAllAlumni);
+// ── Public ──
+router.get(
+  '/mentors',                           
+  AlumniController.getMentors,
+);
 
-// alumni, teacher and admin can access all alumni data
-router.get("/:studentId",auth("alumni","teacher","admin"),AlumniController.getSingleAlumni);
+// ── Alumni: own profile ──       
+router.get(
+  '/me',
+  auth('alumni'),
+  AlumniController.getMyProfile,
+);
 
+router.patch(
+  '/me',
+  auth('alumni'),
+  validationRequest(alumniValidation.updateAlumniSchema),
+  AlumniController.updateMyProfile,
+);
 
-// admin and the only alumni can update their own data
-router.put("/:studentId",auth("me","admin"),validationRequest(alumniValidation.UpdateAlumniSchema),AlumniController.updateAlumni);
+router.patch(
+  '/me/account',
+  auth('alumni'),
+  validationRequest(alumniValidation.updateAlumniLinkedSchema),
+  AlumniController.updateMyLinkedData,
+);
 
-// admin and the only alumni can update their own data in all linked models
-router.patch("/updateLinkedData/:studentId",auth("me","admin"),validationRequest(alumniValidation.UpdateAlumniSchema),AlumniController.updateAlumniLinkedData);
+// ── Admin: all alumni ──
+router.get(
+  '/',
+  auth('admin'),
+  AlumniController.getAllAlumni,
+);
 
+// ── Shared: single alumni by studentId ──
+router.get(
+  '/:studentId',
+  auth('alumni', 'admin'),
+  AlumniController.getSingleAlumni,
+);
+
+// ── Admin: update any alumni ──
+router.patch(
+  '/:studentId',
+  auth('admin'),
+  validationRequest(alumniValidation.updateAlumniSchema),
+  AlumniController.updateAlumni,
+);
 
 export const alumniRoutes = router;

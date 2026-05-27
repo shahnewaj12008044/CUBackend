@@ -20,6 +20,21 @@ const registerStudent = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const registerAlumni = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await AuthService.registerAlumniIntoDB(req.body);
+
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: 'Alumni registered successfully',
+      data: result,
+    });
+  },
+);
+
+
 // const createAdmin = catchAsync(async (req, res) => {
 //   const result = await AuthService.registerAdminIntoDB(req.body); // pass full body
 
@@ -91,9 +106,11 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 export const AuthControllers = {
   registerStudent,
+  registerAlumni,
   loginUser,
   refreshToken,
   forgotPassword,
   resetPassword,
+
   // createAdmin
 };

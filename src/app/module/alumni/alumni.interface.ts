@@ -1,44 +1,44 @@
-//!==================== Alumni data ============================
+import { Types } from 'mongoose';
 
-import { Types } from "mongoose";
+// ========== Enums ==========
 
-// Enums to define alumni category types
 export enum AlumniCategory {
   CORPORATE = 'corporate',
   RESEARCH = 'research',
   ACADEMIA = 'academia',
   ADMINISTRATION = 'administration',
-  BUSSINESS = 'business',
+  BUSINESS = 'business', // 
   OTHER = 'other',
 }
-//& ========== Alumni Sub-Profiles ==========
+
+// ========== Sub-Profiles ==========
 
 export interface ICorporateInfo {
   company: string;
   designation: string;
   description?: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;        
   currentlyWorking?: boolean;
 }
 
 export interface IResearchInfo {
-  institution: string; //^ name of the lab or research institution
+  institution: string;
   researchArea: string[];
   designation: 'MS' | 'PhD' | 'Postdoc' | 'Research Associate' | 'Other';
   supervisor?: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;        // ✅ optional
   currentlyWorking?: boolean;
   description?: string;
 }
 
 export interface IAcademiaInfo {
   institution: string;
-  designation: string; // e.g., Assistant Professor
+  designation: string;
   department: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;        // ✅ optional
   currentlyWorking?: boolean;
   description?: string;
 }
@@ -47,7 +47,7 @@ export interface IAdministrationInfo {
   organization: string;
   designation: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;        // ✅ optional
   currentlyWorking?: boolean;
   description?: string;
 }
@@ -56,7 +56,7 @@ export interface IBusinessInfo {
   businessName: string;
   designation: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;        // ✅ optional
   currentlyWorking?: boolean;
   description?: string;
   location?: string;
@@ -68,22 +68,30 @@ export interface IOtherInfo {
   designation?: string;
   description: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;        // ✅ optional
   currentlyWorking?: boolean;
   location?: string;
 }
 
-interface IALumniLocation {
+// ========== Supporting Interfaces ==========
+
+export interface IAlumniLocation {  // ✅ fixed casing IALumniLocation → IAlumniLocation
   country: string;
   city: string;
 }
 
-interface IAlumniOnlinePresence {
+export interface IAlumniOnlinePresence {
   platform: string;
   link: string;
 }
 
-//* ========== Alumni Data Container ==========
+export interface IAlumniAchievement {  // ✅ fixed typo IAlunmiAchievements → IAlumniAchievement
+  title: string;
+  description: string;
+  year: number;
+}
+
+// ========== Alumni Profile Container ==========
 
 export interface IAlumniProfile {
   alumniCategory: AlumniCategory;
@@ -93,35 +101,27 @@ export interface IAlumniProfile {
   administrationInfo?: IAdministrationInfo[];
   businessInfo?: IBusinessInfo[];
   otherInfo?: IOtherInfo[];
-
- 
 }
 
-interface IAlunmiAchievements {
-  title: string;
-  description: string;
-  year: number;
-}
-
+// ========== Main Alumni Interface ==========
 
 export interface IAlumni {
-  studentId: string; // Reference to the student ID
-  userId: Types.ObjectId; //& reference to the user ID
+  studentId: string;
+  userId: Types.ObjectId;
   name: string;
   gender: 'male' | 'female' | 'other';
-  email: string;
   graduationYear: number;
   contactNumber: string;
-  onlinePresence?:IAlumniOnlinePresence[];
-  willingTomentor: boolean;
-  location:IALumniLocation;
   session: string;
-  achievements?: IAlunmiAchievements[];
-  portfolioLink?: string;
-  alumniProfile: IAlumniProfile;
-  department: string; //! this will be a reference id of department later
-  faculty: string; //! this will be a reference id of faculty later
-  status: 'in-progress' | 'blocked';
-  isDeleted: boolean;
-}
+  department: string;
+  faculty: string;
 
+  willingToMentor: boolean;      
+  location: IAlumniLocation;       
+  onlinePresence?: IAlumniOnlinePresence[];
+  achievements?: IAlumniAchievement[];  
+  portfolioLink?: string;
+  bio?: string;                  
+
+  alumniProfile: IAlumniProfile;
+}

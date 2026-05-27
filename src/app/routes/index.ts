@@ -1,11 +1,14 @@
 import { Router } from "express";
 
-import { alumniRoutes } from "../module/alumni/alumni.route";
+
 
 
 import { UserRoutes } from "../module/user/user.route";
 import { AuthRoutes } from "../module/auth/auth.route";
 import { AdminRoutes } from "../module/admin/admin.route";
+import { alumniRoutes } from "../module/alumni/alumni.route";
+import { StudentRoutes } from "../module/student/student.routes";
+import { postRoutes } from "../module/posts/post.route";
 
 const router = Router()
 
@@ -19,10 +22,10 @@ const moduleRouter = [
         path: "/alumni",
         route:alumniRoutes,
     },
-    // {
-    //      path: "/students",
-    //      route: studentRoutes, // Assuming you have a student route similar to alumni
-    // },
+    {
+         path: "/students",
+         route: StudentRoutes, // Assuming you have a student route similar to alumni
+    },
     {
         path: "/auth",  
         route:AuthRoutes
@@ -30,6 +33,10 @@ const moduleRouter = [
     {
         path: "/admin",
         route: AdminRoutes
+    },
+    {
+        path: "/posts",
+        route: postRoutes
     }
 ]
 

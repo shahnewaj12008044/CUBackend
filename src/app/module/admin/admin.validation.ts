@@ -67,10 +67,16 @@ const registerViaInviteValidationSchema = z.object({
   }),
 });
 
+const rejectPostSchema = z.object({
+  body: z.object({
+    rejectionReason: z.string().min(1, 'Rejection reason is required'),
+  }),
+});
+
 export const AdminValidations = {
   createAdminValidationSchema,
   updateAdminValidationSchema,
-
+  rejectPostSchema,
   inviteAdminValidationSchema,
   registerViaInviteValidationSchema
 };

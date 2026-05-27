@@ -1,17 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import mongoose from 'mongoose';
+import httpStatus from 'http-status-codes';
 import AppError from '../../errors/AppError';
 import { User } from '../user/user.model';
-import { IAlumni } from './alumni.interface';
 import Alumni from './alumni.model';
-import httpStatus from 'http-status-codes';
-import validatePayloadKeys from '../../utils/validatePayloadKeys';
+import { IAlumni } from './alumni.interface';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { alumniSearchableFields } from './alumni.constants';
 
+// ── GET ALL — admin/alumni browsing ──
 const getAllAlumniFromDB = async (query: Record<string, unknown>) => {
-   const alumniQuery = new QueryBuilder(
-    Alumni.find(),
+  const alumniQuery = new QueryBuilder(
+    Alumni.find().populate('userId', 'email status'), 
     query,
   )
     .search(alumniSearchableFields)
@@ -21,90 +19,181 @@ const getAllAlumniFromDB = async (query: Record<string, unknown>) => {
     .fields();
 
   const result = await alumniQuery.modelQuery;
-  return result;
+  const meta = await alumniQuery.countTotal(); // ✅ consistent with admin pattern
+  return { meta, result };
 };
 
-const getSingleAlumniFromDB = async (id: string) => {
-  const result = await Alumni.findOne({ studentId: id });
-  return result;
-};
-
-const updateAlumniFromDB = async (id: string, payload: Partial<IAlumni>) => {
-  //^ 🚫 Block forbidden field updates
-  const forbiddenFields: string[] = [
-      'status',
-      'role',
-      'email',
-    ];
-  
-    for( const field of forbiddenFields) {
-      if (field in payload) {
-        throw new AppError(
-          httpStatus.BAD_REQUEST,
-          `Updating ${field} is not allowed`,
-        );
-      }
-    }
-     //! so basicly i was trying to update the user and student data in one transactionbut i realised in doing so i have to write it more than one time ( student, alumni and so on ) so i will just write it once in user to update the role email status etc
-  //^ SUMMARY: you can update anything but email, role, status and id. for updating that you have to go to user route and here you will find those options to update
-
-  const result = await Alumni.findOneAndUpdate({ studentId: id }, payload, {
-    new: true,
-    runValidators: true,
-  }).exec();
- 
-  //! here i didn't handled the non-primitive data types like array or array of objects my plan is to handle them form frontend although this is a bad practice but for now i will do it like this
+// ── GET SINGLE — by studentId ──
+const getSingleAlumniFromDB = async (studentId: string) => {
+  const result = await Alumni.findOne({ studentId }).populate(
+    'userId',
+    'email status',
+  );
   if (!result) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      `Alumni with id ${id} not found`,
-    );
+    throw new AppError(httpStatus.NOT_FOUND, 'Alumni not found');
   }
   return result;
 };
 
+// ── GET MY PROFILE — alumni reads own profile ──
+const getMyProfileFromDB = async (studentId: string) => {
+  const user = await User.findOne({ id: studentId });
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  const result = await Alumni.findOne({ userId: user._id }).populate(
+    'userId',
+    'email status',
+  );
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Alumni profile not found');
+  }
+  return result;
+};
 
-//^ shouldn't i do that also in user service. In this method  i have to write the same funcion in different models whereas in user service i can just do it by doing it once and then use it in all models.
-//~ remarks on the above line: i tried it also but from user part its not that simple as expected cause here also every model like student, alumni rquires to update which makes the code little bit odd  although i did it using if else if statement.
-
-
-//! update linked data like isDeleted, status, email etc.
-const updateAlumniLinkedDataFromDB = async(id : string,payload: Partial<IAlumni>) =>{
-    const session = await mongoose.startSession();
-    try{
-        session.startTransaction();
-         //^ 🚫 Block forbidden field updates like role is not in the student model but if i put role it didnt give any error instead it modified the user so i added the validation where if the keys are not common in both model it will give error 
-    //* nice validation works both for user and student model
-        validatePayloadKeys(payload, User, 'user');
-        validatePayloadKeys(payload, Alumni, 'alumni');
-        const user = await User.findOneAndUpdate({id}, payload, {new : true,session});
-        if(!user){
-            throw new AppError(httpStatus.BAD_REQUEST,"Failed to update  user")
-        }
-        const alumni = await Alumni.findOneAndUpdate({studentId : id}, payload, {new : true, session});
-        if(!alumni){
-            throw new AppError(httpStatus.BAD_REQUEST,"Failed to update alumni")
-        }
-        await session.commitTransaction();
-        session.endSession();
-        return alumni;
-
+// ── UPDATE MY PROFILE — alumni updates own profile ──
+const updateMyProfileInDB = async (
+  studentId: string,
+  payload: Partial<IAlumni>,
+) => {
+  // 🚫 block fields alumni should never self-update
+  const forbiddenFields = ['studentId', 'userId', 'graduationYear', 'session', 'department', 'faculty'];
+  for (const field of forbiddenFields) {
+    if (field in payload) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Updating '${field}' is not allowed`,
+      );
     }
- catch(error: any){
-    session.abortTransaction();
-    session.endSession();
-    throw new AppError(httpStatus.BAD_REQUEST,`Failed to update alumni for ${error?.message} `,error)
- }
-}
+  }
+
+  const user = await User.findOne({ id: studentId });
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  const result = await Alumni.findOneAndUpdate(
+    { userId: user._id },
+    { $set: payload },
+    { new: true, runValidators: true },
+  );
+
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Alumni profile not found');
+  }
+
+  return result;
+};
+
+// ── UPDATE ANY ALUMNI — admin only ──
+const updateAlumniFromDB = async (
+  studentId: string,
+  payload: Partial<IAlumni>,
+) => {
+  const forbiddenFields = ['studentId', 'userId'];
+  for (const field of forbiddenFields) {
+    if (field in payload) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Updating '${field}' is not allowed`,
+      );
+    }
+  }
+
+  const result = await Alumni.findOneAndUpdate(
+    { studentId },
+    { $set: payload },
+    { new: true, runValidators: true },
+  );
+
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, `Alumni with id ${studentId} not found`);
+  }
+
+  return result;
+};
+
+// ── UPDATE LINKED DATA — email/status lives in User ──
+const ALUMNI_ALLOWED_FIELDS = ['email'] as const;
+
+const FORBIDDEN_FIELDS = [
+  'status',
+  'role',
+  'isDeleted',
+  'isVerified',
+  'password',
+  'passwordChangedAt',
+  'id',
+];
+
+const updateAlumniLinkedDataFromDB = async (
+  customUserId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload: Record<string, any>,
+) => {
+  // 🚫 Explicit forbidden-field check
+  for (const field of FORBIDDEN_FIELDS) {
+    if (field in payload) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        `You are not allowed to update '${field}'`,
+      );
+    }
+  }
+
+  // ✅ Whitelist allowed fields
+  const safePayload: Partial<{ email: string }> = {};
+
+  for (const key of ALUMNI_ALLOWED_FIELDS) {
+    if (payload[key] !== undefined) {
+      safePayload[key] = payload[key];
+    }
+  }
+
+  if (Object.keys(safePayload).length === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'No valid fields provided for update',
+    );
+  }
+
+  const user = await User.findOneAndUpdate(
+    { id: customUserId },
+    { $set: safePayload },
+    { new: true, runValidators: true },
+  );
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  return user;
+};
 
 
+// ── GET MENTORS — public mentor listing ──
+const getMentorsFromDB = async (query: Record<string, unknown>) => {
+  const mentorQuery = new QueryBuilder(
+    Alumni.find({ willingToMentor: true }).populate('userId', 'email'),
+    query,
+  )
+    .search(alumniSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
 
+  const result = await mentorQuery.modelQuery;
+  const meta = await mentorQuery.countTotal();
+  return { meta, result };
+};
 
 export const AlumniServices = {
   getAllAlumniFromDB,
   getSingleAlumniFromDB,
+  getMyProfileFromDB,
+  updateMyProfileInDB,
   updateAlumniFromDB,
   updateAlumniLinkedDataFromDB,
- 
+  getMentorsFromDB,
 };
- 

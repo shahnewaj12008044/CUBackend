@@ -3,6 +3,7 @@ import { AuthControllers } from './auth.controller';
 
 import { AuthValidations } from './auth.validation';
 import validationRequest from '../../middleware/validationRequest';
+import { alumniValidation } from '../alumni/alumni.validation';
 // import { AdminValidations } from '../admin/admin.validation';
 // import auth from '../../middleware/auth';
 
@@ -14,6 +15,14 @@ router.post(
   validationRequest(AuthValidations.registerStudentValidationSchema),
   AuthControllers.registerStudent,
 );
+
+
+router.post(
+  '/signup/alumni',
+  validationRequest(alumniValidation.createAlumniSchema),
+  AuthControllers.registerAlumni,
+);
+
 // router.post(
 //   '/signup/admin',
 //   auth('admin'),

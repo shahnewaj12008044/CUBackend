@@ -56,4 +56,37 @@ router.delete(
   AdminController.deleteAdmin,
 );
 
+
+// ─── Post moderation ──────────────────────────────────────────────────────────
+router.get(
+  '/posts/all',
+  auth('admin'),
+  AdminController.getAllPosts,
+);
+
+router.get(
+  '/posts/pending',
+  auth('admin'),
+  AdminController.getPendingPosts,
+);
+
+router.patch(
+  '/posts/:postId/approve',
+  auth('admin'),
+  AdminController.approvePost,
+);
+
+router.patch(
+  '/posts/:postId/reject',
+  auth('admin'),
+  validationRequest(AdminValidations.rejectPostSchema),
+  AdminController.rejectPost,
+);
+
+router.delete(
+  '/posts/:postId',
+  auth('admin'),
+  AdminController.adminDeletePost,
+);
+
 export const AdminRoutes = router;

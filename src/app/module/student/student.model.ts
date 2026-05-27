@@ -1,6 +1,6 @@
+
 import { Schema, model } from 'mongoose';
 import { IStudent } from './student.interface';
-import { applySoftDeleteFilter } from '../../utils/applySoftDeleteFilter';
 
 const socialMediaSchema = new Schema(
   {
@@ -26,10 +26,7 @@ const achievementSchema = new Schema(
       required: [true, 'Achievement title is required'],
       trim: true,
     },
-    description: {
-      type: String,
-      trim: true,
-    },
+    description: { type: String, trim: true },
     year: {
       type: Number,
       required: [true, 'Achievement year is required'],
@@ -96,48 +93,20 @@ const studentSchema = new Schema<IStudent>(
       type: studyInfoSchema,
       required: [true, 'Study info is required'],
     },
-
-    contactNumber: {
-      type: String,
-      trim: true,
-    },
-    gender: {
-      type: String,
-      enum: ['male', 'female', 'other'],
-    },
-
+    contactNumber: { type: String, trim: true },
+    gender: { type: String, enum: ['male', 'female', 'other'] },
     socialMedia: [socialMediaSchema],
-    skills: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-    interests: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
+    skills: [{ type: String, trim: true }],
+    interests: [{ type: String, trim: true }],
     achievements: [achievementSchema],
-
     bio: {
       type: String,
       trim: true,
       maxlength: [500, 'Bio cannot exceed 500 characters'],
     },
-    profileImage: {
-      type: String,
-      trim: true,
-    },
-    cvLink: {
-      type: String,
-      trim: true,
-    },
-    portfolioLink: {
-      type: String,
-      trim: true,
-    },
+    profileImage: { type: String, trim: true },
+    cvLink: { type: String, trim: true },
+    portfolioLink: { type: String, trim: true },
   },
   {
     timestamps: true,
@@ -145,25 +114,9 @@ const studentSchema = new Schema<IStudent>(
   },
 );
 
-
 studentSchema.index({ department: 1 });
 studentSchema.index({ faculty: 1 });
 studentSchema.index({ session: 1 });
 
-
-const queryMiddleware = ['find', 'findOne', 'count', 'countDocuments'];
-for (const method of queryMiddleware) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  studentSchema.pre(method as any, applySoftDeleteFilter);
-}
 const Student = model<IStudent>('Student', studentSchema);
-
 export default Student;
-
-
-
-
-//!example data 
-/*
-!I have separated student and alumni models because in the long run i want to create a separate club where alumni data will be crucial and it will be easier to manage alumni data separately.it will be faster to run queries and also it will be easier to manage alumni data separately.
- */

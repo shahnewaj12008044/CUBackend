@@ -11,6 +11,8 @@ import { sendMail } from '../../utils/sendMail';
 import otpHtml from '../../Templates/otp';
 import mongoose from 'mongoose';
 import Student from '../student/student.model';
+import Alumni from '../alumni/alumni.model';
+import { IAlumni } from '../alumni/alumni.interface';
 // import { Admin } from '../admin/admin.model';
 // import { IAdmin } from '../admin/admin.interface';
 
@@ -78,6 +80,80 @@ const registerStudent = async (payload: IRegisterStudent) => {
     return {
       user: createdUser,
       student: createdStudent,
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    await session.endSession();
+    throw error;
+  }
+};
+
+
+
+const registerAlumniIntoDB = async (payload: {email:string, password:string, alumni:IAlumni}) => {
+  const { email, password, alumni } = payload;
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    // 1️⃣ Check existing user by email
+    const existingUser = await User.findOne({ email }).session(session);
+    if (existingUser) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        'A user already exists with this email',
+      );
+    }
+
+    // 2️⃣ Check existing alumni by studentId / alumniId
+    const existingAlumni = await Alumni.findOne({
+      studentId: alumni.studentId,
+    }).session(session);
+
+    if (existingAlumni) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        'An alumni already exists with this student ID',
+      );
+    }
+
+    // 3️⃣ Create User
+    const createdUsers = await User.create(
+      [
+        {
+          id: alumni.studentId, // custom ID
+          email,
+          password,
+          role: 'alumni',
+          status: 'active',
+          isDeleted: false,
+          isVerified: false,
+        },
+      ],
+      { session },
+    );
+
+    const createdUser = createdUsers[0];
+
+    // 4️⃣ Create Alumni profile
+    const createdAlumni = await Alumni.create(
+      [
+        {
+          ...alumni,
+          userId: createdUser._id,
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    return {
+      user: createdUser,
+      alumni: createdAlumni[0],
     };
   } catch (error) {
     await session.abortTransaction();
@@ -344,5 +420,6 @@ export const AuthService = {
   refreshAccessToken,
   forgotPassword,
   resetPassword,
+    registerAlumniIntoDB
   // registerAdminIntoDB
 };

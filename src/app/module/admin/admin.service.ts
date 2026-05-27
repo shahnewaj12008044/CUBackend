@@ -11,6 +11,8 @@ import QueryBuilder from '../../builder/QueryBuilder';
 import crypto from 'crypto';
 import inviteAdminHtml from '../../Templates/adminInvite';
 import { flattenNestedObject } from './admin.utils';
+import { Post } from '../posts/post.model';
+
 // Fields that are allowed to be searched via text search
 // ✅ Fix — define and pass searchable fields
 const adminSearchableFields = ['name.firstName', 'name.lastName', 'contactNo', 'designation'];
@@ -253,6 +255,119 @@ const registerAdminViaInviteIntoDB = async (payload: {
     throw error;
   }
 };
+
+
+//  ─── GET ALL POSTS (admin view — all statuses) ────────────────────────────────
+
+const getAllPostsFromDB = async (query: Record<string, unknown>) => {
+  const postQuery = new QueryBuilder(
+    Post.find().populate('author', 'email'),  // no status filter — admin sees all
+    query,
+  )
+    .search(['title', 'description', 'tags', 'type'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await postQuery.modelQuery;
+  const meta = await postQuery.countTotal();
+  return { meta, result };
+};
+
+//! ─── GET PENDING POSTS ────────────────────────────────────────────────────────
+
+const getPendingPostsFromDB = async (query: Record<string, unknown>) => {
+  const postQuery = new QueryBuilder(
+    Post.find({ status: 'pending' }).populate('author', 'email'),
+    query,
+  )
+    .sort()
+    .paginate();
+
+  const result = await postQuery.modelQuery;
+  const meta = await postQuery.countTotal();
+  return { meta, result };
+};
+
+//! ─── APPROVE POST ─────────────────────────────────────────────────────────────
+
+const approvePostInDB = async (postId: string, customUserId: string) => {
+  const admin = await User.findOne({ id: customUserId });
+  if (!admin) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Admin not found');
+  }
+
+  const post = await Post.findById(postId);
+  if (!post) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  }
+
+  if (post.status !== 'pending') {
+    throw new AppError(httpStatus.BAD_REQUEST, `Post is already ${post.status}`);
+  }
+
+  return await Post.findByIdAndUpdate(
+    postId,
+    {
+      $set: {
+        status: 'approved',
+        approvedBy: admin._id,
+        approvedAt: new Date(),
+        rejectionReason: null,
+      },
+    },
+    { new: true },
+  );
+};
+
+//! ─── REJECT POST ──────────────────────────────────────────────────────────────
+
+const rejectPostInDB = async (
+  postId: string,
+  customUserId: string,
+  rejectionReason: string,
+) => {
+  const admin = await User.findOne({ id: customUserId });
+  if (!admin) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Admin not found');
+  }
+
+  const post = await Post.findById(postId);
+  if (!post) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  }
+
+  if (post.status !== 'pending') {
+    throw new AppError(httpStatus.BAD_REQUEST, `Post is already ${post.status}`);
+  }
+
+  return await Post.findByIdAndUpdate(
+    postId,
+    {
+      $set: {
+        status: 'rejected',
+        rejectionReason,
+        approvedBy: null,
+        approvedAt: null,
+      },
+    },
+    { new: true },
+  );
+};
+
+// ─── ADMIN DELETE ANY POST ────────────────────────────────────────────────────
+
+const adminDeletePostFromDB = async (postId: string) => {
+  const post = await Post.findById(postId);
+  if (!post) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  }
+  await Post.findByIdAndUpdate(postId, { $set: { isDeleted: true } });
+};
+
+
+
 // ─────────────────────────────────────────────
 // EXPORT
 // ─────────────────────────────────────────────
@@ -264,5 +379,10 @@ export const AdminServices = {
   deleteAdminFromDB,
   inviteAdminIntoDB,
   registerAdminViaInviteIntoDB,
-  updateMeInDB
+  updateMeInDB,
+  getAllPostsFromDB,
+  getPendingPostsFromDB,
+  approvePostInDB,
+  rejectPostInDB,
+  adminDeletePostFromDB,
 };

@@ -1,51 +1,71 @@
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-
 import { StudentServices } from './student.service';
+import httpStatus from 'http-status-codes';
 
 const getAllStudents = catchAsync(async (req, res) => {
   const result = await StudentServices.getAllStudentFromDB(req.query);
+
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: httpStatus.OK,
     success: true,
-    message: 'All Students fetched successfully',
+    message: 'All students fetched successfully',
     data: result,
   });
 });
 
 const getSingleStudent = catchAsync(async (req, res) => {
   const { studentId } = req.params;
+
   const result = await StudentServices.getSingleStudentFromDB(studentId);
+
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: httpStatus.OK,
     success: true,
-    message: 'Single Student fetched successfully',
+    message: 'Student fetched successfully',
     data: result,
   });
 });
 
-const updateStudent = catchAsync(async (req, res) => {
-  const { studentId } = req.params;
-  const payload = req.body;
-  const result = await StudentServices.updateStudentFromDB(studentId, payload);
+const updateStudentProfile = catchAsync(async (req, res) => {
+  const studentId = req.user?.id; // comes from JWT via auth middleware
+
+  const result = await StudentServices.updateStudentProfileFromDB(
+    studentId,
+    req.body,
+  );
+
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: httpStatus.OK,
     success: true,
-    message: 'Student updated successfully',
+    message: 'Student profile updated successfully',
     data: result,
   });
 });
 
-const updateLinkedData = catchAsync(async (req, res) => {
+const adminUpdateStudent = catchAsync(async (req, res) => {
   const { studentId } = req.params;
+  const result = await StudentServices.adminUpdateStudentFromDB(
+    studentId,
+    req.body,
+  );
 
-  const role = req.user?.role;
-  
-  const result = await StudentServices.updateLinkedDataFromDB(studentId,req.body, role);
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: httpStatus.OK,
     success: true,
-    message: 'Student is updated in all linked models successfully',
+    message: 'Student academic data updated successfully',
+    data: result,
+  });
+});
+
+const deleteStudent = catchAsync(async (req, res) => {
+  const { studentId } = req.params;
+  const result = await StudentServices.deleteStudentFromDB(studentId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Student deleted successfully',
     data: result,
   });
 });
@@ -53,6 +73,7 @@ const updateLinkedData = catchAsync(async (req, res) => {
 export const StudentController = {
   getAllStudents,
   getSingleStudent,
-  updateStudent,
- updateLinkedData,
+  updateStudentProfile,
+  adminUpdateStudent,
+  deleteStudent,
 };

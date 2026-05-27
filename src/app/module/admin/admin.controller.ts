@@ -93,6 +93,65 @@ const registerViaInvite = catchAsync(async (req, res) => {
   });
 });
 
+
+const getAllPosts = catchAsync(async (req, res) => {
+  const result = await AdminServices.getAllPostsFromDB(req.query);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'All posts fetched successfully',
+    data: result,
+  });
+});
+
+const getPendingPosts = catchAsync(async (req, res) => {
+  const result = await AdminServices.getPendingPostsFromDB(req.query);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Pending posts fetched successfully',
+    data: result,
+  });
+});
+
+const approvePost = catchAsync(async (req, res) => {
+  const result = await AdminServices.approvePostInDB(
+    req.params.postId,
+    req.user?.id,
+  );
+  
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post approved successfully',
+    data: result,
+  });
+});
+
+const rejectPost = catchAsync(async (req, res) => {
+  const result = await AdminServices.rejectPostInDB(
+    req.params.postId,
+    req.user?.id,
+    req.body.rejectionReason,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post rejected successfully',
+    data: result,
+  });
+});
+
+const adminDeletePost = catchAsync(async (req, res) => {
+  await AdminServices.adminDeletePostFromDB(req.params.postId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post deleted successfully',
+    data: null,
+  });
+});
+
 export const AdminController = {
   getAllAdmins,
   getAdminById,
@@ -100,5 +159,10 @@ export const AdminController = {
   deleteAdmin,
   inviteAdmin,
   registerViaInvite,
-  updateMe
+  updateMe,
+  getAllPosts,
+  getPendingPosts,
+  approvePost,
+  rejectPost,
+  adminDeletePost
 };
