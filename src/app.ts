@@ -9,6 +9,7 @@ import globalErrorHandler from './app/middleware/globalErrorHandler';
 import notFound from './app/middleware/notFound';
 import { authLimiter, limiter } from './app/utils/rateLimiter';
 import { applySecurityMiddleware } from './app/middleware/security';
+import config from './app/config';
 
 const app: Application = express();
 
@@ -37,7 +38,8 @@ app.use(cookieParser());
 // cors
 app.use(
   cors({
-    origin: process.env.CLIENT_URL?.split(',') || ['http://localhost:3000'],
+    // origin: process.env.frontend_url?.split(',') || ['http://localhost:3000'],
+    origin:config.frontend_url?.split(',') || ['http://localhost:3000'],
     credentials: true,
   })
 );
