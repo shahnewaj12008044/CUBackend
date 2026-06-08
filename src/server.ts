@@ -10,7 +10,7 @@ let server: Server;
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  process.exit(1);
+  if (process.env.NODE_ENV !== 'production') process.exit(1);
 });
 
 async function shutdown(signal: string, error?: unknown) {
@@ -58,7 +58,8 @@ async function main() {
 main();
 
 process.on('unhandledRejection', (reason) => {
-  shutdown('Unhandled Rejection', reason);
+  console.error('Unhandled Rejection:', reason);
+  if (process.env.NODE_ENV !== 'production') shutdown('Unhandled Rejection', reason);
 });
 
 process.on('SIGTERM', () => {
