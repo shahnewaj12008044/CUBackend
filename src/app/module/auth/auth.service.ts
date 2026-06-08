@@ -365,7 +365,9 @@ const forgotPassword = async (email: string) => {
   const text = `Your OTP for password reset is: ${otp}. It will expire in 10 minutes.`;
   const emailHtml = otpHtml(otp);
 
-  await sendMail(user.email, subject, text, emailHtml);
+  sendMail(user.email, subject, text, emailHtml).catch((err) => {
+    console.error('Failed to send OTP email:', err);
+  });
 
   return {
     message: 'OTP sent to your email successfully',

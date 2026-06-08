@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 
 import app from './app';
 import config from './app/config';
+import connectDB from './lib/mongodb';
 
 let server: Server;
 
@@ -42,7 +43,7 @@ async function shutdown(signal: string, error?: unknown) {
 
 async function main() {
   try {
-    await mongoose.connect(config.db_url as string );
+    await connectDB();
     console.log('Database connected successfully.');
 
     server = app.listen(config.port, () => {
