@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import inviteAdminHtml from '../../Templates/adminInvite';
 import { flattenNestedObject } from './admin.utils';
 import { Post } from '../posts/post.model';
+import { uploadToCloudinary } from '../../utils/uploadCloudinary';
 
 // Fields that are allowed to be searched via text search
 // ✅ Fix — define and pass searchable fields
@@ -76,7 +77,12 @@ const getAdminByIdFromDB = async (id: string) => {
 //   return updatedAdmin;
 // };
 
-const updateMeInDB = async (id: string, payload: Partial<IAdmin>) => {
+const updateMeInDB = async (id: string, payload: Partial<IAdmin>, file?: Express.Multer.File) => {
+  if (file) {
+    const { url } = await uploadToCloudinary(file.buffer, file.originalname, 'profile');
+    payload.profileImg = url;
+  }
+
   const { name, ...remainingData } = payload;
 
   const flattenedData = flattenNestedObject(
@@ -193,8 +199,14 @@ const registerAdminViaInviteIntoDB = async (payload: {
   token: string;
   password: string;
   admin: IAdmin;
+  file?: Express.Multer.File;
 }) => {
-  const { token, password, admin } = payload;
+  const { token, password, admin, file } = payload;
+
+  if (file) {
+    const { url } = await uploadToCloudinary(file.buffer, file.originalname, 'profile');
+    admin.profileImg = url;
+  }
 
   // 1. Validate the token
   const invite = await AdminInvite.findOne({ token, isUsed: false });

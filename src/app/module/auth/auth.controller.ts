@@ -10,7 +10,7 @@ import { AuthService } from './auth.service';
 
 
 const registerStudent = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthService.registerStudent(req.body);
+  const result = await AuthService.registerStudent(req.body, req.file);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,

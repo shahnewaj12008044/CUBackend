@@ -1,14 +1,12 @@
-// ✅ Removed: /me/linked route — email/status updates belong in User routes
-// ✅ Split: PATCH into /:studentId/profile and /:studentId/academic
-// ✅ Role guards are the ONLY access control needed — no service-layer checks
-
 import express from 'express';
+import multer from 'multer';
 import auth from '../../middleware/auth';
 import validationRequest from '../../middleware/validationRequest';
 import { StudentController } from './student.controller';
 import { StudentValidations } from './student.validation';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 router.get('/', auth('admin'), StudentController.getAllStudents);
 
@@ -22,6 +20,7 @@ router.get(
 router.patch(
   '/me',
   auth('student'),
+  upload.single('profileImage'),
   validationRequest(StudentValidations.updateStudentProfileValidationSchema),
   StudentController.updateStudentProfile,
 );

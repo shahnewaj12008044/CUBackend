@@ -9,6 +9,7 @@ import { User } from '../user/user.model';
 import QueryBuilder from '../../builder/QueryBuilder';
 import AppError from '../../errors/AppError';
 import { studentSearchableFields } from './student.constants';
+import { uploadToCloudinary } from '../../utils/uploadCloudinary';
 
 // ─────────────────────────────────────────────
 // GET ALL
@@ -48,7 +49,13 @@ const getSingleStudentFromDB = async (studentId: string) => {
 const updateStudentProfileFromDB = async (
   studentId: string,
   payload: IUpdateStudentProfile,
+  file?: Express.Multer.File,
 ) => {
+  if (file) {
+    const { url } = await uploadToCloudinary(file.buffer, file.originalname, 'profile');
+    payload.profileImage = url;
+  }
+
   const result = await Student.findOneAndUpdate(
     { studentId },
     { $set: payload },

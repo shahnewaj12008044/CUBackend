@@ -47,7 +47,7 @@ const getAdminById = catchAsync(async (req, res) => {
 // });
 
 const updateMe = catchAsync(async (req, res) => {
-  const result = await AdminServices.updateMeInDB(req.user?.id, req.body.admin);
+  const result = await AdminServices.updateMeInDB(req.user?.id, req.body.admin || req.body, req.file);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -83,7 +83,10 @@ const inviteAdmin = catchAsync(async (req, res) => {
 });
 
 const registerViaInvite = catchAsync(async (req, res) => {
-  const result = await AdminServices.registerAdminViaInviteIntoDB(req.body);
+  const result = await AdminServices.registerAdminViaInviteIntoDB({
+    ...req.body,
+    file: req.file,
+  });
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,

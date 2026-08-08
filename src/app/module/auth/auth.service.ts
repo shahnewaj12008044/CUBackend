@@ -13,13 +13,17 @@ import mongoose from 'mongoose';
 import Student from '../student/student.model';
 import Alumni from '../alumni/alumni.model';
 import { IAlumni } from '../alumni/alumni.interface';
-// import { Admin } from '../admin/admin.model';
-// import { IAdmin } from '../admin/admin.interface';
+import { uploadToCloudinary } from '../../utils/uploadCloudinary';
 
 
 
-const registerStudent = async (payload: IRegisterStudent) => {
+const registerStudent = async (payload: IRegisterStudent, file?: Express.Multer.File) => {
   const { email, password, student } = payload;
+
+  if (file) {
+    const { url } = await uploadToCloudinary(file.buffer, file.originalname, 'profile');
+    student.profileImage = url;
+  }
 
   const session = await mongoose.startSession();
 

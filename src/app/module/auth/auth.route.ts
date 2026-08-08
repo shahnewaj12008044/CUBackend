@@ -1,17 +1,18 @@
 import express from 'express';
+import multer from 'multer';
 import { AuthControllers } from './auth.controller';
 
 import { AuthValidations } from './auth.validation';
 import validationRequest from '../../middleware/validationRequest';
 import { alumniValidation } from '../alumni/alumni.validation';
-// import { AdminValidations } from '../admin/admin.validation';
-// import auth from '../../middleware/auth';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 
 router.post(
   '/signup/student',
+  upload.single('profileImage'),
   validationRequest(AuthValidations.registerStudentValidationSchema),
   AuthControllers.registerStudent,
 );

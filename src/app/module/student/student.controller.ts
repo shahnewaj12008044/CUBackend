@@ -28,11 +28,12 @@ const getSingleStudent = catchAsync(async (req, res) => {
 });
 
 const updateStudentProfile = catchAsync(async (req, res) => {
-  const studentId = req.user?.id; // comes from JWT via auth middleware
+  const studentId = req.user?.id;
 
   const result = await StudentServices.updateStudentProfileFromDB(
     studentId,
     req.body,
+    req.file,
   );
 
   sendResponse(res, {
